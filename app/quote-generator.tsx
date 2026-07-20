@@ -4,7 +4,7 @@ import type {
   CSSProperties,
   PointerEvent as ReactPointerEvent,
 } from "react";
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import Image from "next/image";
 import {
   currencyCodes,
@@ -81,6 +81,7 @@ type DocumentTextChangeHandler = <K extends keyof DocumentText>(
 type QuoteTermOption = {
   value: QuoteTermValue;
   label: string;
+  months: number;
   years: number;
   discountPercent: number;
 };
@@ -103,7 +104,7 @@ type ProposalData = {
   customDiscountPercent: string;
   selectedQuoteTerms: QuoteTermValue[];
   customQuoteTermLabel: string;
-  customQuoteTermYears: string;
+  customQuoteTermMonths: string;
   customQuoteTermDiscountPercent: string;
   pricingOptions: PricingOption[];
   additionalNotes: string[];
@@ -122,6 +123,7 @@ type LegacyPricingOption = PricingOption & {
 type LegacyProposalData = Partial<ProposalData> & {
   customerCountry?: string;
   costProposalStyle?: string;
+  customQuoteTermYears?: string;
   pricingOptions?: LegacyPricingOption[];
 };
 
@@ -152,6 +154,7 @@ type OptionTotals = {
   totalDiscountAmount: number;
   total: number;
   termYears: number;
+  termMonths: number;
   customDiscountPercent: number;
   termDiscountPercent: number;
 };
@@ -163,10 +166,10 @@ const minGeneratorPanelWidth = 380;
 const maxGeneratorPanelWidth = 760;
 
 const quoteTermOptions: QuoteTermOption[] = [
-  { value: "1", label: "12 months", years: 1, discountPercent: 0 },
-  { value: "2", label: "2 years", years: 2, discountPercent: 5 },
-  { value: "3", label: "3 years", years: 3, discountPercent: 10 },
-  { value: "5", label: "5 years", years: 5, discountPercent: 15 },
+  { value: "1", label: "12 months", months: 12, years: 1, discountPercent: 0 },
+  { value: "2", label: "2 years", months: 24, years: 2, discountPercent: 5 },
+  { value: "3", label: "3 years", months: 36, years: 3, discountPercent: 10 },
+  { value: "5", label: "5 years", months: 60, years: 5, discountPercent: 15 },
 ];
 
 const eligibilityDiscountOptions: Array<{
@@ -238,6 +241,7 @@ const productByName = new Map(
 );
 
 const defaultBasePackageName = "Jotform Enterprise Base Package (includes 5 users)";
+const customProductName = "Add another product";
 const legacyProductNameMap = new Map([
   ["Onboarding Fee", "Enterprise Onboarding"],
   ["Custom One-Time Fee", "Professional Services"],
@@ -288,7 +292,7 @@ const defaultDocumentText: DocumentText = {
   platformHeader: "Platform",
   quantityHeader: "Quantity",
   costPerYearHeader: "Cost\nPer Year",
-  numberOfYearsHeader: "Number of Years",
+  numberOfYearsHeader: "Number of Months",
   totalDueHeader: "Total Due",
   totalLabel: "TOTAL",
   recurringSubtotalLabel: "Recurring subtotal",
@@ -324,7 +328,7 @@ const emptyProposal: ProposalData = {
   customDiscountPercent: "",
   selectedQuoteTerms: ["1"],
   customQuoteTermLabel: "",
-  customQuoteTermYears: "",
+  customQuoteTermMonths: "",
   customQuoteTermDiscountPercent: "",
   pricingOptions: [
     {
@@ -419,7 +423,9 @@ function currentProposal(source: ProposalData): ProposalData {
     customDiscountPercent: "",
     selectedQuoteTerms: normalizeQuoteTermValues(source.selectedQuoteTerms),
     customQuoteTermLabel: source.customQuoteTermLabel || "",
-    customQuoteTermYears: source.customQuoteTermYears || "",
+    customQuoteTermMonths:
+      source.customQuoteTermMonths ||
+      legacyCustomTermMonths(legacySource.customQuoteTermYears),
     customQuoteTermDiscountPercent: source.customQuoteTermDiscountPercent || "",
     pricingOptions: source.pricingOptions?.length
       ? source.pricingOptions.map(normalizePricingOption)
@@ -513,6 +519,11 @@ function normalizeDocumentText(source?: Partial<DocumentText>): DocumentText {
     normalizedSource.totalDueHeader = defaultDocumentText.totalDueHeader;
   }
 
+  if (normalizedSource.numberOfYearsHeader === "Number of Years") {
+    normalizedSource.numberOfYearsHeader =
+      defaultDocumentText.numberOfYearsHeader;
+  }
+
   if (normalizedSource.customDiscountLabel === "Custom discount") {
     normalizedSource.customDiscountLabel = defaultDocumentText.customDiscountLabel;
   }
@@ -533,16 +544,36 @@ function normalizeQuoteTermValues(values: unknown): QuoteTermValue[] {
 }
 
 function customQuoteTerm(proposal: ProposalData): QuoteTermOption {
-  const years = positiveNumber(proposal.customQuoteTermYears, 1) || 1;
+  const months = positiveNumber(proposal.customQuoteTermMonths, 12) || 12;
+  const years = months / 12;
   const discountPercent = positiveNumber(proposal.customQuoteTermDiscountPercent);
-  const fallbackLabel = years === 1 ? "Custom term" : `${years} years`;
+  const fallbackLabel = formatTermMonthsLabel(months);
 
   return {
     value: "custom",
     label: proposal.customQuoteTermLabel.trim() || fallbackLabel,
+    months,
     years,
     discountPercent,
   };
+}
+
+function legacyCustomTermMonths(yearsInput?: string) {
+  const years = positiveNumber(yearsInput || "");
+
+  return years > 0 ? String(years * 12) : "";
+}
+
+function formatTermMonthsLabel(months: number) {
+  const formattedMonths = formatPlainNumber(months);
+
+  return `${formattedMonths} ${months === 1 ? "month" : "months"}`;
+}
+
+function formatPlainNumber(value: number) {
+  return value.toLocaleString("en-US", {
+    maximumFractionDigits: 2,
+  });
 }
 
 function selectedQuoteTerms(values: QuoteTermValue[], proposal?: ProposalData) {
@@ -635,8 +666,16 @@ function isCustomPriceProduct(product?: ProductPrice) {
   return Boolean(product?.customPriceRequired);
 }
 
+function isCustomProductRow(pricingRow: PricingRow) {
+  return pricingRow.productName === customProductName;
+}
+
 function hasCustomPriceAmount(pricingRow: PricingRow) {
   return positiveNumber(pricingRow.unitPriceOverride || "") > 0;
+}
+
+function hasCustomProductDisplayName(pricingRow: PricingRow) {
+  return Boolean(pricingRow.displayName?.trim());
 }
 
 function isMissingCustomPriceLine(line?: CalculatedLine) {
@@ -647,12 +686,28 @@ function isMissingCustomPriceLine(line?: CalculatedLine) {
   );
 }
 
+function isMissingCustomProductNameLine(line?: CalculatedLine) {
+  return Boolean(
+    line &&
+      isCustomProductRow(line.row) &&
+      !hasCustomProductDisplayName(line.row),
+  );
+}
+
 function missingCustomPriceRows(proposal: ProposalData) {
   return primaryPricingOption(proposal).rows.filter((pricingRow) => {
     const product = productByName.get(pricingRow.productName);
 
     return isCustomPriceProduct(product) && !hasCustomPriceAmount(pricingRow);
   });
+}
+
+function missingCustomProductNameRows(proposal: ProposalData) {
+  return primaryPricingOption(proposal).rows.filter(
+    (pricingRow) =>
+      isCustomProductRow(pricingRow) &&
+      !hasCustomProductDisplayName(pricingRow),
+  );
 }
 
 function priceInputValue(line?: CalculatedLine) {
@@ -771,6 +826,7 @@ function calculateOption(
       oneTimeSubtotal -
       oneTimeResellerDiscountAmount,
     termYears: term.years,
+    termMonths: term.months,
     customDiscountPercent,
     termDiscountPercent,
   };
@@ -781,23 +837,24 @@ export function QuoteGenerator() {
     cloneProposal(emptyProposal),
   );
   const [pdfValidationMessage, setPdfValidationMessage] = useState("");
-  const [generatorPanelWidth, setGeneratorPanelWidth] = useState(() => {
-    if (typeof window === "undefined") return defaultGeneratorPanelWidth;
+  const [generatorPanelWidth, setGeneratorPanelWidth] = useState(
+    defaultGeneratorPanelWidth,
+  );
+  const datedProposal = currentProposal(proposal);
 
+  useEffect(() => {
     const storedWidth = Number(
       window.localStorage.getItem(generatorPanelWidthStorageKey),
     );
 
-    if (!Number.isFinite(storedWidth)) return defaultGeneratorPanelWidth;
+    if (!Number.isFinite(storedWidth)) return;
 
-    const viewportMax = Math.max(minGeneratorPanelWidth, window.innerWidth - 420);
+    const animationFrame = window.requestAnimationFrame(() => {
+      setGeneratorPanelWidth(clampGeneratorPanelWidth(storedWidth));
+    });
 
-    return Math.min(
-      Math.max(storedWidth, minGeneratorPanelWidth),
-      Math.min(maxGeneratorPanelWidth, viewportMax),
-    );
-  });
-  const datedProposal = currentProposal(proposal);
+    return () => window.cancelAnimationFrame(animationFrame);
+  }, []);
 
   function clampGeneratorPanelWidth(width: number) {
     const viewportMax =
@@ -1037,15 +1094,20 @@ export function QuoteGenerator() {
   }
 
   function printProposal() {
-    const missingRows = missingCustomPriceRows(datedProposal);
+    const missingNameRows = missingCustomProductNameRows(datedProposal);
+    const missingPriceRows = missingCustomPriceRows(datedProposal);
 
-    if (missingRows.length > 0) {
+    if (missingNameRows.length > 0 || missingPriceRows.length > 0) {
       setPdfValidationMessage(
-        "Professional Services amount is required before downloading the PDF.",
+        missingNameRows.length > 0 && missingPriceRows.length > 0
+          ? "Custom product name and amount are required before downloading the PDF."
+          : missingNameRows.length > 0
+            ? "Custom product name is required before downloading the PDF."
+            : "Custom amount is required before downloading the PDF.",
       );
       window.requestAnimationFrame(() => {
         const firstMissingInput = document.querySelector(
-          "[data-required-custom-price='true']",
+          "[data-required-custom-product-name='true'], [data-required-custom-price='true']",
         );
 
         if (firstMissingInput instanceof HTMLElement) {
@@ -1110,10 +1172,18 @@ export function QuoteGenerator() {
   }
 
   const pricingOption = primaryPricingOption(datedProposal);
+  const selectedTermsForTotals = selectedQuoteTerms(
+    datedProposal.selectedQuoteTerms,
+    datedProposal,
+  );
+  const editorTerm =
+    selectedTermsForTotals.find((term) => term.value === "custom") ||
+    selectedTermsForTotals[0] ||
+    quoteTermOptions[0];
   const editorTotals = calculateOption(
     pricingOption,
     datedProposal.currency,
-    quoteTermOptions[0],
+    editorTerm,
     datedProposal.eligibilityDiscountType,
     datedProposal.resellerDiscountType,
     datedProposal.customDiscountPercent,
@@ -1310,6 +1380,7 @@ export function QuoteGenerator() {
                 );
                 const isOneTimeFee =
                   line?.product?.category === "One-Time Fees";
+                const isCustomProduct = isCustomProductRow(pricingRow);
                 const rowIndex = pricingOption.rows.findIndex(
                   (candidate) => candidate.id === pricingRow.id,
                 );
@@ -1340,44 +1411,85 @@ export function QuoteGenerator() {
                         title="Move row down"
                       />
                     </div>
-                    <select
-                      className="field compact-field product-select"
-                      value={pricingRow.productName}
-                      onChange={(event) => {
-                        const nextProductName = event.target.value;
-                        const nextProduct = productByName.get(nextProductName);
-                        updatePricingRow(pricingOption.id, pricingRow.id, {
-                          productName: nextProductName,
-                          displayName: "",
-                          quantity:
-                            nextProductName && !positiveNumber(pricingRow.quantity)
-                              ? "1"
-                              : pricingRow.quantity,
-                          unitPriceOverride: "",
-                          waived:
-                            nextProduct?.category === "One-Time Fees"
-                              ? pricingRow.waived
-                              : false,
-                        });
-                      }}
-                      aria-label="Product"
-                    >
-                      <option value="">Select product</option>
-                      {productGroups.map((group) => (
-                        <optgroup key={group} label={group}>
-                          {productPrices
-                            .filter((product) => product.category === group)
-                            .map((product) => (
-                              <option
-                                key={product.product}
-                                value={product.product}
-                              >
-                                {product.product}
-                              </option>
+                    <div className="product-field-wrap">
+                      <select
+                        className="field compact-field product-select"
+                        value={pricingRow.productName}
+                        onChange={(event) => {
+                          const nextProductName = event.target.value;
+                          const nextProduct = productByName.get(nextProductName);
+                          updatePricingRow(pricingOption.id, pricingRow.id, {
+                            productName: nextProductName,
+                            displayName: "",
+                            quantity:
+                              nextProductName &&
+                              !positiveNumber(pricingRow.quantity)
+                                ? "1"
+                                : pricingRow.quantity,
+                            unitPriceOverride: "",
+                            waived:
+                              nextProduct?.category === "One-Time Fees"
+                                ? pricingRow.waived
+                                : false,
+                          });
+                          if (pdfValidationMessage) setPdfValidationMessage("");
+                        }}
+                        aria-label="Product"
+                      >
+                        <option value="">Select product</option>
+                        {productGroups.map((group) => (
+                          <optgroup key={group} label={group}>
+                            {productPrices
+                              .filter(
+                                (product) =>
+                                  product.category === group &&
+                                  product.product !== customProductName,
+                              )
+                              .map((product) => (
+                                <option
+                                  key={product.product}
+                                  value={product.product}
+                                >
+                                  {product.product}
+                                </option>
                             ))}
-                        </optgroup>
-                      ))}
-                    </select>
+                          </optgroup>
+                        ))}
+                        <option value={customProductName}>
+                          {customProductName}
+                        </option>
+                      </select>
+                      {isCustomProduct ? (
+                        <input
+                          className={`field compact-field custom-product-name-field ${
+                            isMissingCustomProductNameLine(line)
+                              ? "field-error"
+                              : ""
+                          }`}
+                          value={pricingRow.displayName || ""}
+                          placeholder="Product name"
+                          required
+                          data-required-custom-product-name={
+                            isMissingCustomProductNameLine(line)
+                              ? "true"
+                              : undefined
+                          }
+                          onChange={(event) => {
+                            updatePricingRow(pricingOption.id, pricingRow.id, {
+                              displayName: event.target.value,
+                            });
+                            if (pdfValidationMessage) setPdfValidationMessage("");
+                          }}
+                          aria-label="Custom product name"
+                          aria-invalid={isMissingCustomProductNameLine(line)}
+                        />
+                      ) : null}
+                      {isMissingCustomProductNameLine(line) ? (
+                        <span className="custom-price-required-message">
+                          Product name required
+                        </span>
+                      ) : null}
+                    </div>
                     <input
                       className="field compact-field quantity-field"
                       inputMode="decimal"
@@ -1468,7 +1580,7 @@ export function QuoteGenerator() {
                 </button>
                 <div className="pricing-summary-editor">
                   <div>
-                    <span>12 month recurring</span>
+                    <span>{formatTermMonthsLabel(editorTerm.months)} recurring</span>
                     <strong>
                       {formatMoney(
                         editorTotals.recurringSubtotal,
@@ -1578,7 +1690,7 @@ export function QuoteGenerator() {
                 />
                 <span>
                   <strong>Custom term</strong>
-                  <small>Set label, years, and optional discount</small>
+                  <small>Set label, months, and optional discount</small>
                 </span>
               </label>
               {isQuoteTermSelected(datedProposal.selectedQuoteTerms, "custom") ? (
@@ -1595,14 +1707,14 @@ export function QuoteGenerator() {
                     />
                   </label>
                   <label className="field-label">
-                    Number of years
+                    Number of months
                     <input
                       className="field"
                       inputMode="decimal"
-                      value={proposal.customQuoteTermYears}
-                      placeholder="e.g. 1.5"
+                      value={proposal.customQuoteTermMonths}
+                      placeholder="e.g. 18"
                       onChange={(event) =>
-                        updateProposal("customQuoteTermYears", event.target.value)
+                        updateProposal("customQuoteTermMonths", event.target.value)
                       }
                     />
                   </label>
@@ -2239,7 +2351,7 @@ function QuoteTable({
             <th>
               <EditableText
                 value={documentText.numberOfYearsHeader}
-                placeholder="Number of Years"
+                placeholder="Number of Months"
                 onChange={(value) =>
                   onDocumentTextChange("numberOfYearsHeader", value)
                 }
@@ -2303,7 +2415,9 @@ function QuoteTable({
                   />
                 </td>
                 <td>
-                  {line.product?.annual === false ? "One-time" : term.years}
+                  {line.product?.annual === false
+                    ? "One-time"
+                    : formatPlainNumber(term.months)}
                 </td>
                 <td>
                   {line.product?.category === "One-Time Fees" && line.row.waived
@@ -2322,7 +2436,7 @@ function QuoteTable({
                   </td>
                   <td />
                   <td />
-                  <td>{term.years}</td>
+                  <td>{formatPlainNumber(term.months)}</td>
                   <td>
                     -{formatQuoteMoney(totals.eligibilityDiscountAmount, currency)}
                   </td>
@@ -2339,7 +2453,7 @@ function QuoteTable({
                   </td>
                   <td />
                   <td />
-                  <td>{term.years}</td>
+                  <td>{formatPlainNumber(term.months)}</td>
                   <td>
                     -{formatQuoteMoney(totals.resellerDiscountAmount, currency)}
                   </td>
@@ -2365,7 +2479,7 @@ function QuoteTable({
               </td>
               <td />
               <td />
-              <td>{term.years}</td>
+              <td>{formatPlainNumber(term.months)}</td>
               <td>-{formatQuoteMoney(totals.customDiscountAmount, currency)}</td>
             </tr>
           ) : null}
@@ -2383,7 +2497,7 @@ function QuoteTable({
               </td>
               <td>{term.discountPercent}%</td>
               <td />
-              <td>{term.years}</td>
+              <td>{formatPlainNumber(term.months)}</td>
               <td>-{formatQuoteMoney(totals.termDiscountAmount, currency)}</td>
             </tr>
           ) : null}

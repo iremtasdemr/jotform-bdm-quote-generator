@@ -80,6 +80,13 @@ export const productPrices: ProductPrice[] = [
     prices: { USD: 500, CAD: 800, GBP: 400, EUR: 400, AUD: 800 },
   },
   {
+    product: "Add another product",
+    category: "Add-Ons",
+    annual: true,
+    customPriceRequired: true,
+    prices: { USD: 0, CAD: 0, GBP: 0, EUR: 0, AUD: 0 },
+  },
+  {
     product: "Bundle of 5 AI Agent Phone Numbers",
     category: "Add-Ons",
     annual: true,

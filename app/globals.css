@@ -364,6 +364,16 @@ button {
   min-width: 0;
 }
 
+.product-field-wrap {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.custom-product-name-field {
+  min-width: 0;
+}
+
 .row-reorder-controls {
   display: grid;
   gap: 0.14rem;
@@ -1520,6 +1530,7 @@ button {
     grid-row: 1 / 6;
   }
 
+  .pricing-row-editor .product-field-wrap,
   .pricing-row-editor .product-select,
   .pricing-row-editor .quantity-field,
   .pricing-row-editor .money-field-wrap,
@@ -1589,6 +1600,7 @@ button {
     grid-row: 1 / 6;
   }
 
+  .pricing-row-editor .product-field-wrap,
   .pricing-row-editor .product-select,
   .pricing-row-editor .quantity-field,
   .pricing-row-editor .money-field-wrap,
