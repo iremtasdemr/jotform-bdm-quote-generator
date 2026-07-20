@@ -38,3 +38,4 @@ pnpm run dev:cloudflare
 pnpm run build:cloudflare
 pnpm run start:cloudflare
 ```
+Deployment trigger.
