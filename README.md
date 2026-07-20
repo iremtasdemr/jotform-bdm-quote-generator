@@ -29,6 +29,18 @@ Vercel will use the settings in `vercel.json`:
 After deployment, share the generated Vercel preview URL with the employee who
 needs to test it.
 
+## App Password
+
+Set this Vercel Environment Variable to turn on the built-in password screen:
+
+- Name: `QUOTE_ACCESS_PASSWORD`
+- Value: the password testers should enter
+- Environment: Production
+
+After adding or changing the variable, create a new deployment from Vercel or
+push a new commit to GitHub. If `QUOTE_ACCESS_PASSWORD` is not set, the app stays
+open.
+
 ## Cloudflare/Sites Build
 
 The original Cloudflare/Vinext setup is still available:
