@@ -1279,12 +1279,6 @@ export function QuoteGenerator() {
     datedProposal.resellerDiscountType,
     datedProposal.customDiscountPercent,
   );
-  const selectedSalesperson = salespersonOptions.find(
-    (salesperson) => salesperson.name === proposal.preparedByName,
-  );
-  const salespersonEmailOptions = selectedSalesperson
-    ? [selectedSalesperson]
-    : salespersonOptions;
   const standardDiscountOptions = eligibilityDiscountOptions;
 
   return (
@@ -1443,23 +1437,6 @@ export function QuoteGenerator() {
                 {jotformEntityOptions.map((entity) => (
                   <option key={entity.name} value={entity.name}>
                     {entity.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="field-label">
-              Salesperson email
-              <select
-                className="field"
-                value={proposal.salespersonEmail}
-                onChange={(event) =>
-                  updateProposal("salespersonEmail", event.target.value)
-                }
-              >
-                <option value="">Select email</option>
-                {salespersonEmailOptions.map((salesperson) => (
-                  <option key={salesperson.email} value={salesperson.email}>
-                    {salesperson.email}
                   </option>
                 ))}
               </select>
