@@ -43,6 +43,16 @@ type ResellerDiscountType =
   | "reseller20"
   | "reseller10";
 
+type ProposalTextField =
+  | "customerName"
+  | "customerCompany"
+  | "customerAddress"
+  | "resellerName"
+  | "resellerAddress"
+  | "preparedByName"
+  | "salespersonEmail"
+  | "quoteNumber";
+
 type DocumentText = {
   brandName: string;
   dateLabel: string;
@@ -86,6 +96,25 @@ type QuoteTermOption = {
   discountPercent: number;
 };
 
+type JotformEntityOption = {
+  name: string;
+  address: string;
+  taxIdLabel: string;
+  taxId: string;
+};
+
+type QuoteRecipient = {
+  title: string;
+  headingKey: keyof DocumentText;
+  headingExtra: string;
+  headingExtraKey: keyof DocumentText;
+  headingExtraField?: ProposalTextField;
+  name: string;
+  nameField: ProposalTextField;
+  address: string;
+  addressField: ProposalTextField;
+};
+
 type ProposalData = {
   recipientType: QuoteRecipientType;
   customerName: string;
@@ -95,6 +124,7 @@ type ProposalData = {
   resellerAddress: string;
   preparedByName: string;
   salespersonEmail: string;
+  jotformEntityName: string;
   quoteNumber: string;
   proposalDate: string;
   currency: CurrencyCode;
@@ -230,6 +260,40 @@ const resellerDiscountOptions: Array<{
   },
 ];
 
+const jotformEntityOptions: JotformEntityOption[] = [
+  {
+    name: "Jotform US",
+    address: "4 Embarcadero Center, Suite 780\nSan Francisco, CA 94111",
+    taxIdLabel: "Tax ID",
+    taxId: "46-5729519",
+  },
+  {
+    name: "Jotform Canada Inc.",
+    address: "411-150 22ND Street W, North Vancouver BC V7M 3M4",
+    taxIdLabel: "TCV",
+    taxId: "23-014404-TCV",
+  },
+  {
+    name: "Jotform PTY LTD",
+    address: "Level 36, Gateway\n1 Macquarie Place\nSydney, NSW 2000",
+    taxIdLabel: "ABN",
+    taxId: "47 651 796 922",
+  },
+  {
+    name: "Jotform LTD",
+    address: "3 Albert Mews, Albert Road, London, N4 3RD, United Kingdom",
+    taxIdLabel: "VAT",
+    taxId: "375 7259 57",
+  },
+];
+
+const entityDocumentTextKeys = new Set<keyof DocumentText>([
+  "sellerName",
+  "sellerAddress",
+  "taxIdLabel",
+  "taxId",
+]);
+
 const allQuoteTermValues = quoteTermOptions.map((term) => term.value);
 const allSelectableQuoteTermValues: QuoteTermValue[] = [
   ...allQuoteTermValues,
@@ -278,8 +342,8 @@ const defaultDocumentText: DocumentText = {
   brandName: "Jotform",
   dateLabel: "Date",
   quoteTitle: "QUOTE",
-  sellerName: "Jotform",
-  sellerAddress: "4 Embarcadero Center, Suite 780\nSan Francisco CA 94111",
+  sellerName: "Jotform US",
+  sellerAddress: "4 Embarcadero Center, Suite 780\nSan Francisco, CA 94111",
   taxIdLabel: "Tax ID",
   taxId: "46-5729519",
   customerHeading: "To Customer:",
@@ -319,6 +383,7 @@ const emptyProposal: ProposalData = {
   resellerAddress: "",
   preparedByName: "",
   salespersonEmail: "",
+  jotformEntityName: "Jotform US",
   quoteNumber: "",
   proposalDate: todayQuoteDate(),
   currency: "USD",
@@ -410,6 +475,7 @@ function currentProposal(source: ProposalData): ProposalData {
     resellerName: source.resellerName || "",
     resellerAddress: source.resellerAddress || "",
     salespersonEmail: source.salespersonEmail || "",
+    jotformEntityName: source.jotformEntityName || jotformEntityOptions[0].name,
     quoteNumber:
       source.quoteNumber || quoteNumberForSalesperson(source.preparedByName) || "",
     eligibilityDiscountType: normalizeEligibilityDiscountType(
@@ -900,12 +966,37 @@ export function QuoteGenerator() {
     }));
   }
 
+  function updateJotformEntityName(name: string) {
+    const entity = jotformEntityOptions.find((option) => option.name === name);
+
+    setProposal((current) => {
+      const documentText = normalizeDocumentText(current.documentText);
+
+      return {
+        ...current,
+        jotformEntityName: name,
+        documentText: entity
+          ? {
+              ...documentText,
+              sellerName: entity.name,
+              sellerAddress: entity.address,
+              taxIdLabel: entity.taxIdLabel,
+              taxId: entity.taxId,
+            }
+          : documentText,
+      };
+    });
+  }
+
   function updateDocumentText<K extends keyof DocumentText>(
     key: K,
     value: DocumentText[K],
   ) {
     setProposal((current) => ({
       ...current,
+      jotformEntityName: entityDocumentTextKeys.has(key)
+        ? ""
+        : current.jotformEntityName,
       documentText: {
         ...normalizeDocumentText(current.documentText),
         [key]: value,
@@ -1252,6 +1343,16 @@ export function QuoteGenerator() {
                     }
                   />
                 </label>
+                <label className="field-label">
+                  Company name
+                  <input
+                    className="field"
+                    value={proposal.customerCompany}
+                    onChange={(event) =>
+                      updateProposal("customerCompany", event.target.value)
+                    }
+                  />
+                </label>
                 <label className="field-label wide-field">
                   Customer address
                   <textarea
@@ -1295,6 +1396,16 @@ export function QuoteGenerator() {
                     }
                   />
                 </label>
+                <label className="field-label">
+                  Company name
+                  <input
+                    className="field"
+                    value={proposal.customerCompany}
+                    onChange={(event) =>
+                      updateProposal("customerCompany", event.target.value)
+                    }
+                  />
+                </label>
                 <label className="field-label wide-field">
                   Customer address
                   <textarea
@@ -1318,6 +1429,21 @@ export function QuoteGenerator() {
                 {salespersonOptions.map((salesperson) => (
                   <option key={salesperson.name} value={salesperson.name}>
                     {salesperson.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="field-label">
+              Jotform entity
+              <select
+                className="field"
+                value={proposal.jotformEntityName}
+                onChange={(event) => updateJotformEntityName(event.target.value)}
+              >
+                <option value="">Select Jotform entity</option>
+                {jotformEntityOptions.map((entity) => (
+                  <option key={entity.name} value={entity.name}>
+                    {entity.name}
                   </option>
                 ))}
               </select>
@@ -1898,6 +2024,8 @@ function QuotePage({
   const documentText = proposal.documentText;
   const recipients = quoteRecipients(proposal, documentText);
   const showOptionLetters = options.length > 1;
+  const showSingleCustomTermHeader =
+    options.length === 1 && options[0]?.term.value === "custom";
 
   return (
     <article className="quote-page">
@@ -2044,6 +2172,7 @@ function QuotePage({
           key={option.term.value}
           optionLetter={option.optionLetter}
           showOptionLetter={showOptionLetters}
+          showTermHeader={showOptionLetters || showSingleCustomTermHeader}
           term={option.term}
           currency={proposal.currency}
           totals={option.totals}
@@ -2066,7 +2195,10 @@ function QuotePage({
   );
 }
 
-function quoteRecipients(proposal: ProposalData, documentText: DocumentText) {
+function quoteRecipients(
+  proposal: ProposalData,
+  documentText: DocumentText,
+): QuoteRecipient[] {
   if (proposal.recipientType === "reseller") {
     return [
       {
@@ -2082,8 +2214,10 @@ function quoteRecipients(proposal: ProposalData, documentText: DocumentText) {
       {
         title: documentText.customerHeading,
         headingKey: "customerHeading" as const,
-        headingExtra: documentText.customerHeadingExtra,
+        headingExtra:
+          proposal.customerCompany || documentText.customerHeadingExtra,
         headingExtraKey: "customerHeadingExtra" as const,
+        headingExtraField: "customerCompany" as const,
         name: proposal.customerName,
         nameField: "customerName" as const,
         address: proposal.customerAddress,
@@ -2096,8 +2230,9 @@ function quoteRecipients(proposal: ProposalData, documentText: DocumentText) {
     {
       title: documentText.customerHeading,
       headingKey: "customerHeading" as const,
-      headingExtra: documentText.customerHeadingExtra,
+      headingExtra: proposal.customerCompany || documentText.customerHeadingExtra,
       headingExtraKey: "customerHeadingExtra" as const,
+      headingExtraField: "customerCompany" as const,
       name: proposal.customerName,
       nameField: "customerName" as const,
       address: proposal.customerAddress,
@@ -2140,6 +2275,7 @@ function QuotePartiesTable({
           <td>
             <QuotePartyHeading
               recipient={leftRecipient}
+              onPartyFieldChange={onPartyFieldChange}
               onDocumentTextChange={onDocumentTextChange}
             />
           </td>
@@ -2148,6 +2284,7 @@ function QuotePartiesTable({
             {rightRecipient ? (
               <QuotePartyHeading
                 recipient={rightRecipient}
+                onPartyFieldChange={onPartyFieldChange}
                 onDocumentTextChange={onDocumentTextChange}
               />
             ) : null}
@@ -2181,9 +2318,14 @@ function QuotePartiesTable({
 
 function QuotePartyHeading({
   recipient,
+  onPartyFieldChange,
   onDocumentTextChange,
 }: {
   recipient: ReturnType<typeof quoteRecipients>[number];
+  onPartyFieldChange: <K extends keyof ProposalData>(
+    key: K,
+    value: ProposalData[K],
+  ) => void;
   onDocumentTextChange: DocumentTextChangeHandler;
 }) {
   return (
@@ -2196,9 +2338,14 @@ function QuotePartyHeading({
       <OptionalInlineEditableText
         value={recipient.headingExtra}
         placeholder="Add text"
-        onChange={(value) =>
-          onDocumentTextChange(recipient.headingExtraKey, value)
-        }
+        onChange={(value) => {
+          if (recipient.headingExtraField) {
+            onPartyFieldChange(recipient.headingExtraField, value);
+            return;
+          }
+
+          onDocumentTextChange(recipient.headingExtraKey, value);
+        }}
       />
     </h2>
   );
@@ -2265,6 +2412,7 @@ function QuotePartyFields({
 function QuoteTable({
   optionLetter,
   showOptionLetter,
+  showTermHeader,
   term,
   currency,
   totals,
@@ -2276,6 +2424,7 @@ function QuoteTable({
 }: {
   optionLetter: string;
   showOptionLetter: boolean;
+  showTermHeader: boolean;
   term: QuoteTermOption;
   currency: CurrencyCode;
   totals: OptionTotals;
@@ -2300,18 +2449,22 @@ function QuoteTable({
 
   return (
     <section className="quote-table-block">
-      {showOptionLetter ? (
+      {showTermHeader ? (
         <h2 className="quote-option-title">
-          <>
-            <EditableText
-              value={documentText.optionLabelPrefix}
-              placeholder="Option"
-              onChange={(value) =>
-                onDocumentTextChange("optionLabelPrefix", value)
-              }
-            />{" "}
-            {optionLetter}: {term.label}
-          </>
+          {showOptionLetter ? (
+            <>
+              <EditableText
+                value={documentText.optionLabelPrefix}
+                placeholder="Option"
+                onChange={(value) =>
+                  onDocumentTextChange("optionLabelPrefix", value)
+                }
+              />{" "}
+              {optionLetter}: {term.label}
+            </>
+          ) : (
+            term.label
+          )}
         </h2>
       ) : null}
       <table className="quote-table">
