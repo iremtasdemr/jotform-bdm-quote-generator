@@ -1302,7 +1302,6 @@ export function QuoteGenerator() {
             <p className="kicker">Jotform Enterprise</p>
             <h1>Quote Generator</h1>
           </div>
-          <div className="status-pill">Custom quote</div>
         </div>
 
         <section className="editor-section">
