@@ -814,6 +814,13 @@ button {
   font-weight: 400;
 }
 
+.quote-meta .quote-plain-editable-text {
+  display: block;
+  width: 100%;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
 .quote-title-line {
   font-size: 1rem;
   font-weight: 800;
