@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 export default async function AccessPage({
   searchParams,
 }: {
@@ -14,8 +16,21 @@ export default async function AccessPage({
   return (
     <main className="access-page">
       <section className="access-panel" aria-labelledby="access-title">
-        <p className="access-kicker">Jotform Enterprise</p>
-        <h1 id="access-title">Quote Generator</h1>
+        <div className="site-brand access-brand">
+          <Image
+            className="site-brand-logo"
+            src="/jotform-logo.png"
+            alt=""
+            aria-hidden="true"
+            width={51}
+            height={50}
+            unoptimized
+          />
+          <div>
+            <p className="access-kicker">Jotform Enterprise</p>
+            <h1 id="access-title">Quote Generator</h1>
+          </div>
+        </div>
         <form className="access-form" action="/api/access" method="post">
           <label className="field-label">
             Password

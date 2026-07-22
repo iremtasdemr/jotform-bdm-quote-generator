@@ -312,7 +312,7 @@ const legacyProductNameMap = new Map([
 const eligibilityDiscountProductNames = new Set([
   "Additional User",
   "Additional 5 User Bundle",
-  "Salesforce AppExchange Package*",
+  "Salesforce AppExchange Per User Additional Fee**",
 ]);
 
 const salespersonOptions = [
@@ -1296,9 +1296,20 @@ export function QuoteGenerator() {
     >
       <aside className="generator-panel no-print">
         <div className="generator-header">
-          <div>
-            <p className="kicker">Jotform Enterprise</p>
-            <h1>Quote Generator</h1>
+          <div className="site-brand">
+            <Image
+              className="site-brand-logo"
+              src="/jotform-logo.png"
+              alt=""
+              aria-hidden="true"
+              width={51}
+              height={50}
+              unoptimized
+            />
+            <div>
+              <p className="kicker">Jotform Enterprise</p>
+              <h1>Quote Generator</h1>
+            </div>
           </div>
         </div>
 

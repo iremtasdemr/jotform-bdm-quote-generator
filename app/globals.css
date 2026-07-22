@@ -97,6 +97,23 @@ button {
   font-weight: 800;
 }
 
+.site-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.42rem;
+}
+
+.site-brand-logo {
+  display: block;
+  width: 2rem;
+  height: 2rem;
+  object-fit: contain;
+}
+
+.access-brand {
+  align-items: flex-start;
+}
+
 .proposal-app {
   display: grid;
   height: 100vh;
