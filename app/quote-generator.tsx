@@ -2434,13 +2434,20 @@ function QuoteTable({
   documentText: DocumentText;
   onDocumentTextChange: DocumentTextChangeHandler;
 }) {
+  const quoteLines =
+    totals.eligibilityDiscountAmount > 0
+      ? [
+          ...totals.lines.filter(isEligibilityDiscountLine),
+          ...totals.lines.filter((line) => !isEligibilityDiscountLine(line)),
+        ]
+      : totals.lines;
   const eligibilityDiscountAnchor =
     totals.eligibilityDiscountAmount > 0
-      ? [...totals.lines].reverse().find(isEligibilityDiscountLine)
+      ? [...quoteLines].reverse().find(isEligibilityDiscountLine)
       : undefined;
   const resellerDiscountAnchor =
     totals.resellerDiscountAmount > 0
-      ? totals.lines[totals.lines.length - 1]
+      ? quoteLines[quoteLines.length - 1]
       : undefined;
 
   return (
@@ -2517,7 +2524,7 @@ function QuoteTable({
           </tr>
         </thead>
         <tbody>
-          {totals.lines.map((line) => (
+          {quoteLines.map((line) => (
             <Fragment key={line.row.id}>
               <tr>
                 <td>
