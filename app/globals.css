@@ -1096,6 +1096,13 @@ button {
   font-size: 0.8rem;
 }
 
+.quote-discount-scope {
+  display: block;
+  margin-top: 0.02in;
+  font-size: 0.68rem;
+  line-height: 1.12;
+}
+
 .quote-total-row td {
   font-weight: 800;
 }
