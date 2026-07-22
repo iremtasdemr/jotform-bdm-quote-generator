@@ -2575,14 +2575,8 @@ function QuoteTable({
                   key={`${line.row.id}-eligibility-discount`}
                 >
                   <td>
-                    <span>
-                      {totals.eligibilityDiscountLabel} -{" "}
-                      {totals.eligibilityDiscountPercent}%
-                    </span>{" "}
-                    <span className="quote-discount-scope">
-                      (Eligible items only; excludes Salesforce AppExchange
-                      Package)
-                    </span>
+                    {totals.eligibilityDiscountLabel} -{" "}
+                    {totals.eligibilityDiscountPercent}%
                   </td>
                   <td />
                   <td />
