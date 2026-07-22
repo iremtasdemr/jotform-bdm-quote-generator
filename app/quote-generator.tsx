@@ -924,11 +924,22 @@ export function QuoteGenerator() {
   }
 
   useEffect(() => {
-    const animationFrame = window.requestAnimationFrame(() => {
-      setGeneratorPanelWidth(maxAvailableGeneratorPanelWidth());
-    });
+    let animationFrame = 0;
 
-    return () => window.cancelAnimationFrame(animationFrame);
+    function syncGeneratorPanelWidth() {
+      window.cancelAnimationFrame(animationFrame);
+      animationFrame = window.requestAnimationFrame(() => {
+        setGeneratorPanelWidth(maxAvailableGeneratorPanelWidth());
+      });
+    }
+
+    syncGeneratorPanelWidth();
+    window.addEventListener("resize", syncGeneratorPanelWidth);
+
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+      window.removeEventListener("resize", syncGeneratorPanelWidth);
+    };
   }, []);
 
   function updateProposal<K extends keyof ProposalData>(
