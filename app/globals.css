@@ -1597,7 +1597,7 @@ button {
   }
 }
 
-@media (max-width: 1120px) {
+@media (max-width: 1640px) {
   .proposal-app {
     height: auto;
     grid-template-columns: 1fr;
