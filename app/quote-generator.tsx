@@ -190,7 +190,6 @@ type OptionTotals = {
 };
 
 const productGroups = ["Base Packages", "Add-Ons", "One-Time Fees"] as const;
-const generatorPanelWidthStorageKey = "jotformQuoteGeneratorPanelWidth";
 const defaultGeneratorPanelWidth = 760;
 const minGeneratorPanelWidth = 380;
 const maxGeneratorPanelWidth = 760;
@@ -908,31 +907,29 @@ export function QuoteGenerator() {
   );
   const datedProposal = currentProposal(proposal);
 
-  useEffect(() => {
-    const storedWidth = Number(
-      window.localStorage.getItem(generatorPanelWidthStorageKey),
-    );
-
-    if (!Number.isFinite(storedWidth)) return;
-
-    const animationFrame = window.requestAnimationFrame(() => {
-      setGeneratorPanelWidth(clampGeneratorPanelWidth(storedWidth));
-    });
-
-    return () => window.cancelAnimationFrame(animationFrame);
-  }, []);
-
-  function clampGeneratorPanelWidth(width: number) {
+  function maxAvailableGeneratorPanelWidth() {
     const viewportMax =
       typeof window === "undefined"
         ? maxGeneratorPanelWidth
         : Math.max(minGeneratorPanelWidth, window.innerWidth - 420);
 
+    return Math.min(maxGeneratorPanelWidth, viewportMax);
+  }
+
+  function clampGeneratorPanelWidth(width: number) {
     return Math.min(
       Math.max(width, minGeneratorPanelWidth),
-      Math.min(maxGeneratorPanelWidth, viewportMax),
+      maxAvailableGeneratorPanelWidth(),
     );
   }
+
+  useEffect(() => {
+    const animationFrame = window.requestAnimationFrame(() => {
+      setGeneratorPanelWidth(maxAvailableGeneratorPanelWidth());
+    });
+
+    return () => window.cancelAnimationFrame(animationFrame);
+  }, []);
 
   function updateProposal<K extends keyof ProposalData>(
     key: K,
@@ -1250,10 +1247,6 @@ export function QuoteGenerator() {
 
     function handlePointerUp() {
       resizeHandle.releasePointerCapture(pointerId);
-      window.localStorage.setItem(
-        generatorPanelWidthStorageKey,
-        String(nextWidth),
-      );
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
     }

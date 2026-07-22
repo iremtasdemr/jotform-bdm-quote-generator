@@ -764,15 +764,15 @@ button {
 }
 
 .quote-info-col-spacer {
-  width: 1.052in;
+  width: 0.552in;
 }
 
 .quote-info-col-date {
-  width: 1.604in;
+  width: 1.454in;
 }
 
 .quote-info-col-meta {
-  width: 1.646in;
+  width: 2.296in;
 }
 
 .quote-info-table td {
@@ -814,8 +814,9 @@ button {
 .quote-meta .quote-plain-editable-text {
   display: block;
   width: 100%;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
   text-align: right;
+  white-space: nowrap;
 }
 
 .quote-title-line {
