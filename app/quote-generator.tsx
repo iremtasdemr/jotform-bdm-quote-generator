@@ -308,11 +308,16 @@ const customProductName = "Add another product";
 const legacyProductNameMap = new Map([
   ["Onboarding Fee", "Enterprise Onboarding"],
   ["Custom One-Time Fee", "Professional Services"],
+  ["Salesforce AppExchange Package*", "Salesforce AppExchange Package"],
+  [
+    "Salesforce AppExchange Per User Additional Fee**",
+    "Salesforce AppExchange Per User Additional Fee",
+  ],
 ]);
 const eligibilityDiscountProductNames = new Set([
   "Additional User",
   "Additional 5 User Bundle",
-  "Salesforce AppExchange Per User Additional Fee**",
+  "Salesforce AppExchange Per User Additional Fee",
 ]);
 
 const salespersonOptions = [
