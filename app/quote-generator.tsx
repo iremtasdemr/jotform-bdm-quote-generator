@@ -1347,7 +1347,7 @@ export function QuoteGenerator() {
             {datedProposal.recipientType === "customer" ? (
               <>
                 <label className="field-label">
-                  Customer name
+                  Contact name
                   <input
                     className="field"
                     value={proposal.customerName}
@@ -1400,7 +1400,7 @@ export function QuoteGenerator() {
                   />
                 </label>
                 <label className="field-label">
-                  Customer name
+                  Contact name
                   <input
                     className="field"
                     value={proposal.customerName}
