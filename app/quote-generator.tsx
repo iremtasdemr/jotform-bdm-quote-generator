@@ -28,7 +28,7 @@ type PricingOption = {
   rows: PricingRow[];
 };
 
-type QuoteTermValue = "1" | "2" | "3" | "5" | "custom";
+type QuoteTermValue = "1" | "2" | "2_no_discount" | "3" | "5" | "custom";
 
 type QuoteRecipientType = "customer" | "reseller";
 
@@ -72,6 +72,8 @@ type DocumentText = {
   quantityHeader: string;
   costPerYearHeader: string;
   numberOfYearsHeader: string;
+  listPriceHeader: string;
+  discountedPriceHeader: string;
   totalDueHeader: string;
   totalLabel: string;
   recurringSubtotalLabel: string;
@@ -197,6 +199,13 @@ const maxGeneratorPanelWidth = 760;
 const quoteTermOptions: QuoteTermOption[] = [
   { value: "1", label: "12 months", months: 12, years: 1, discountPercent: 0 },
   { value: "2", label: "2 years", months: 24, years: 2, discountPercent: 5 },
+  {
+    value: "2_no_discount",
+    label: "2 years - no discount",
+    months: 24,
+    years: 2,
+    discountPercent: 0,
+  },
   { value: "3", label: "3 years", months: 36, years: 3, discountPercent: 10 },
   { value: "5", label: "5 years", months: 60, years: 5, discountPercent: 15 },
 ];
@@ -322,10 +331,10 @@ const eligibilityDiscountProductNames = new Set([
 
 const salespersonOptions = [
   { name: "Brad Morris", email: "bradmorris@jotform.com" },
-  { name: "Derec Alan Thompson", email: "derecthompson@jotform.com" },
+  { name: "Derec Thompson", email: "derecthompson@jotform.com" },
   { name: "Keith Alberts", email: "keith@jotform.com" },
   { name: "Jack Barrett", email: "jack@jotform.com" },
-  { name: "Grant Benjamin Gutwein", email: "grant@jotform.com" },
+  { name: "Grant Gutwein", email: "grant@jotform.com" },
   { name: "Brian Longtin", email: "brianlongtin@jotform.com" },
   { name: "Matthew Ansted", email: "matthewansted@jotform.com" },
   { name: "Peter Eichner", email: "peter@jotform.com" },
@@ -338,9 +347,15 @@ const salespersonOptions = [
   { name: "Quyen Pham", email: "quyenpham@jotform.com" },
   { name: "Ryan Verba", email: "ryanverba@jotform.com" },
   { name: "Richard Martin", email: "richardmartin@jotform.com" },
-  { name: "Austin Michael Schaefer", email: "austinschaefer@jotform.com" },
+  { name: "Austin Schaefer", email: "austinschaefer@jotform.com" },
   { name: "Selena Hart", email: "selenahart@jotform.com" },
 ];
+
+const legacySalespersonNameMap = new Map([
+  ["Derec Alan Thompson", "Derec Thompson"],
+  ["Grant Benjamin Gutwein", "Grant Gutwein"],
+  ["Austin Michael Schaefer", "Austin Schaefer"],
+]);
 
 const defaultDocumentText: DocumentText = {
   brandName: "Jotform",
@@ -361,6 +376,8 @@ const defaultDocumentText: DocumentText = {
   quantityHeader: "Quantity",
   costPerYearHeader: "Cost\nPer Year",
   numberOfYearsHeader: "Number of Months",
+  listPriceHeader: "List Price",
+  discountedPriceHeader: "Discounted Price",
   totalDueHeader: "Total Due",
   totalLabel: "TOTAL",
   recurringSubtotalLabel: "Recurring subtotal",
@@ -462,6 +479,10 @@ function quotePdfTitle(proposal: ProposalData) {
   return `${safeCustomerName || "Customer"} - Jotform Enterprise Quote`;
 }
 
+function normalizeSalespersonName(name: string) {
+  return legacySalespersonNameMap.get(name) || name;
+}
+
 function setBrowserTitle(title: string) {
   document.title = title;
 }
@@ -469,6 +490,10 @@ function setBrowserTitle(title: string) {
 function currentProposal(source: ProposalData): ProposalData {
   const legacySource = source as LegacyProposalData;
   const recipientType = normalizeRecipientType(source.recipientType);
+  const preparedByName = normalizeSalespersonName(source.preparedByName || "");
+  const salesperson = salespersonOptions.find(
+    (option) => option.name === preparedByName,
+  );
 
   return {
     ...source,
@@ -478,10 +503,11 @@ function currentProposal(source: ProposalData): ProposalData {
     customerAddress: source.customerAddress || "",
     resellerName: source.resellerName || "",
     resellerAddress: source.resellerAddress || "",
-    salespersonEmail: source.salespersonEmail || "",
+    preparedByName,
+    salespersonEmail: source.salespersonEmail || salesperson?.email || "",
     jotformEntityName: source.jotformEntityName || jotformEntityOptions[0].name,
     quoteNumber:
-      source.quoteNumber || quoteNumberForSalesperson(source.preparedByName) || "",
+      source.quoteNumber || quoteNumberForSalesperson(preparedByName) || "",
     eligibilityDiscountType: normalizeEligibilityDiscountType(
       source.eligibilityDiscountType,
     ),
@@ -2169,6 +2195,7 @@ function QuotePage({
           optionLetter={option.optionLetter}
           showOptionLetter={showOptionLetters}
           showTermHeader={showOptionLetters || showSingleCustomTermHeader}
+          recipientType={proposal.recipientType}
           term={option.term}
           currency={proposal.currency}
           totals={option.totals}
@@ -2409,6 +2436,7 @@ function QuoteTable({
   optionLetter,
   showOptionLetter,
   showTermHeader,
+  recipientType,
   term,
   currency,
   totals,
@@ -2421,6 +2449,7 @@ function QuoteTable({
   optionLetter: string;
   showOptionLetter: boolean;
   showTermHeader: boolean;
+  recipientType: QuoteRecipientType;
   term: QuoteTermOption;
   currency: CurrencyCode;
   totals: OptionTotals;
@@ -2434,6 +2463,8 @@ function QuoteTable({
   documentText: DocumentText;
   onDocumentTextChange: DocumentTextChangeHandler;
 }) {
+  const showResellerDiscountColumns =
+    recipientType === "reseller" && totals.resellerDiscountPercent > 0;
   const quoteLines =
     totals.eligibilityDiscountAmount > 0
       ? [
@@ -2446,7 +2477,7 @@ function QuoteTable({
       ? [...quoteLines].reverse().find(isEligibilityDiscountLine)
       : undefined;
   const resellerDiscountAnchor =
-    totals.resellerDiscountAmount > 0
+    totals.resellerDiscountAmount > 0 && !showResellerDiscountColumns
       ? quoteLines[quoteLines.length - 1]
       : undefined;
 
@@ -2471,13 +2502,23 @@ function QuoteTable({
         </h2>
       ) : null}
       <table className="quote-table">
-        <colgroup>
-          <col className="quote-col-platform" />
-          <col className="quote-col-quantity" />
-          <col className="quote-col-amount" />
-          <col className="quote-col-years" />
-          <col className="quote-col-total" />
-        </colgroup>
+        {showResellerDiscountColumns ? (
+          <colgroup>
+            <col className="quote-col-platform" />
+            <col className="quote-col-quantity" />
+            <col className="quote-col-reseller-months" />
+            <col className="quote-col-reseller-list" />
+            <col className="quote-col-reseller-discounted" />
+          </colgroup>
+        ) : (
+          <colgroup>
+            <col className="quote-col-platform" />
+            <col className="quote-col-quantity" />
+            <col className="quote-col-amount" />
+            <col className="quote-col-years" />
+            <col className="quote-col-total" />
+          </colgroup>
+        )}
         <thead>
           <tr>
             <th>
@@ -2494,33 +2535,74 @@ function QuoteTable({
                 onChange={(value) => onDocumentTextChange("quantityHeader", value)}
               />
             </th>
-            <th>
-              <EditableText
-                value={documentText.costPerYearHeader}
-                placeholder="Cost Per Year"
-                multiline
-                onChange={(value) =>
-                  onDocumentTextChange("costPerYearHeader", value)
-                }
-              />
-            </th>
-            <th>
-              <EditableText
-                value={documentText.numberOfYearsHeader}
-                placeholder="Number of Months"
-                onChange={(value) =>
-                  onDocumentTextChange("numberOfYearsHeader", value)
-                }
-              />
-            </th>
-            <th>
-              <EditableText
-                value={documentText.totalDueHeader}
-                placeholder="Total Due"
-                multiline
-                onChange={(value) => onDocumentTextChange("totalDueHeader", value)}
-              />
-            </th>
+            {showResellerDiscountColumns ? (
+              <>
+                <th>
+                  <EditableText
+                    value={documentText.numberOfYearsHeader}
+                    placeholder="Number of Months"
+                    onChange={(value) =>
+                      onDocumentTextChange("numberOfYearsHeader", value)
+                    }
+                  />
+                </th>
+                <th>
+                  <EditableText
+                    value={documentText.listPriceHeader}
+                    placeholder="List Price"
+                    multiline
+                    onChange={(value) =>
+                      onDocumentTextChange("listPriceHeader", value)
+                    }
+                  />
+                </th>
+                <th>
+                  <span className="quote-discounted-price-header">
+                    <EditableText
+                      value={documentText.discountedPriceHeader}
+                      placeholder="Discounted Price"
+                      multiline
+                      onChange={(value) =>
+                        onDocumentTextChange("discountedPriceHeader", value)
+                      }
+                    />
+                    <span>({totals.resellerDiscountPercent}%)</span>
+                  </span>
+                </th>
+              </>
+            ) : (
+              <>
+                <th>
+                  <EditableText
+                    value={documentText.costPerYearHeader}
+                    placeholder="Cost Per Year"
+                    multiline
+                    onChange={(value) =>
+                      onDocumentTextChange("costPerYearHeader", value)
+                    }
+                  />
+                </th>
+                <th>
+                  <EditableText
+                    value={documentText.numberOfYearsHeader}
+                    placeholder="Number of Months"
+                    onChange={(value) =>
+                      onDocumentTextChange("numberOfYearsHeader", value)
+                    }
+                  />
+                </th>
+                <th>
+                  <EditableText
+                    value={documentText.totalDueHeader}
+                    placeholder="Total Due"
+                    multiline
+                    onChange={(value) =>
+                      onDocumentTextChange("totalDueHeader", value)
+                    }
+                  />
+                </th>
+              </>
+            )}
           </tr>
         </thead>
         <tbody>
@@ -2552,34 +2634,62 @@ function QuoteTable({
                     }
                   />
                 </td>
-                <td>
-                  <PlainEditableText
-                    value={
-                      isCustomPriceProduct(line.product) &&
-                      !line.row.unitPriceOverride?.trim()
-                        ? ""
-                        : formatAnnualMoney(line.unitPrice, currency)
-                    }
-                    placeholder={
-                      isCustomPriceProduct(line.product) ? "Enter amount" : ""
-                    }
-                    onChange={(value) =>
-                      onPricingRowChange(pricingOptionId, line.row.id, {
-                        unitPriceOverride: normalizedMoneyInput(value),
-                      })
-                    }
-                  />
-                </td>
-                <td>
-                  {line.product?.annual === false
-                    ? "One-time"
-                    : formatPlainNumber(term.months)}
-                </td>
-                <td>
-                  {line.product?.category === "One-Time Fees" && line.row.waived
-                    ? "Waived"
-                    : formatQuoteMoney(line.total, currency)}
-                </td>
+                {showResellerDiscountColumns ? (
+                  <>
+                    <td>
+                      {line.product?.annual === false
+                        ? "-"
+                        : formatPlainNumber(term.months)}
+                    </td>
+                    <td>
+                      {line.product?.category === "One-Time Fees" &&
+                      line.row.waived
+                        ? "Waived"
+                        : formatQuoteMoney(line.total, currency)}
+                    </td>
+                    <td>
+                      {line.product?.category === "One-Time Fees" &&
+                      line.row.waived
+                        ? "Waived"
+                        : formatQuoteMoney(
+                            line.total - line.resellerDiscountAmount,
+                            currency,
+                          )}
+                    </td>
+                  </>
+                ) : (
+                  <>
+                    <td>
+                      <PlainEditableText
+                        value={
+                          isCustomPriceProduct(line.product) &&
+                          !line.row.unitPriceOverride?.trim()
+                            ? ""
+                            : formatAnnualMoney(line.unitPrice, currency)
+                        }
+                        placeholder={
+                          isCustomPriceProduct(line.product) ? "Enter amount" : ""
+                        }
+                        onChange={(value) =>
+                          onPricingRowChange(pricingOptionId, line.row.id, {
+                            unitPriceOverride: normalizedMoneyInput(value),
+                          })
+                        }
+                      />
+                    </td>
+                    <td>
+                      {line.product?.annual === false
+                        ? "One-time"
+                        : formatPlainNumber(term.months)}
+                    </td>
+                    <td>
+                      {line.product?.category === "One-Time Fees" &&
+                      line.row.waived
+                        ? "Waived"
+                        : formatQuoteMoney(line.total, currency)}
+                    </td>
+                  </>
+                )}
               </tr>
               {eligibilityDiscountAnchor?.row.id === line.row.id ? (
                 <tr
@@ -2591,8 +2701,17 @@ function QuoteTable({
                     {totals.eligibilityDiscountPercent}%
                   </td>
                   <td />
-                  <td />
-                  <td>{formatPlainNumber(term.months)}</td>
+                  {showResellerDiscountColumns ? (
+                    <>
+                      <td>{formatPlainNumber(term.months)}</td>
+                      <td />
+                    </>
+                  ) : (
+                    <>
+                      <td />
+                      <td>{formatPlainNumber(term.months)}</td>
+                    </>
+                  )}
                   <td>
                     -{formatQuoteMoney(totals.eligibilityDiscountAmount, currency)}
                   </td>
@@ -2634,8 +2753,17 @@ function QuoteTable({
                 - {totals.customDiscountPercent}%
               </td>
               <td />
-              <td />
-              <td>{formatPlainNumber(term.months)}</td>
+              {showResellerDiscountColumns ? (
+                <>
+                  <td>{formatPlainNumber(term.months)}</td>
+                  <td />
+                </>
+              ) : (
+                <>
+                  <td />
+                  <td>{formatPlainNumber(term.months)}</td>
+                </>
+              )}
               <td>-{formatQuoteMoney(totals.customDiscountAmount, currency)}</td>
             </tr>
           ) : null}
@@ -2652,8 +2780,17 @@ function QuoteTable({
                 />
               </td>
               <td>{term.discountPercent}%</td>
-              <td />
-              <td>{formatPlainNumber(term.months)}</td>
+              {showResellerDiscountColumns ? (
+                <>
+                  <td>{formatPlainNumber(term.months)}</td>
+                  <td />
+                </>
+              ) : (
+                <>
+                  <td />
+                  <td>{formatPlainNumber(term.months)}</td>
+                </>
+              )}
               <td>-{formatQuoteMoney(totals.termDiscountAmount, currency)}</td>
             </tr>
           ) : null}
@@ -2666,8 +2803,17 @@ function QuoteTable({
               />
             </td>
             <td />
-            <td />
-            <td />
+            {showResellerDiscountColumns ? (
+              <>
+                <td />
+                <td>{formatQuoteMoney(totals.subtotalBeforeDiscounts, currency)}</td>
+              </>
+            ) : (
+              <>
+                <td />
+                <td />
+              </>
+            )}
             <td>{formatQuoteMoney(totals.total, currency)}</td>
           </tr>
         </tbody>

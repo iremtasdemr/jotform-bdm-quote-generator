@@ -1036,6 +1036,12 @@ button {
   width: 18.1%;
 }
 
+.quote-col-reseller-months,
+.quote-col-reseller-list,
+.quote-col-reseller-discounted {
+  width: 17%;
+}
+
 .quote-table th,
 .quote-table td {
   border: 1.5px solid #000000;
@@ -1051,6 +1057,13 @@ button {
 
 .quote-table th .quote-editable-text {
   white-space: pre-line;
+}
+
+.quote-discounted-price-header {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0 0.16rem;
 }
 
 .quote-table th:first-child {
