@@ -666,6 +666,10 @@ function formatTermMonthsLabel(months: number) {
   return `${formattedMonths} ${months === 1 ? "month" : "months"}`;
 }
 
+function quoteTermDocumentLabel(term: QuoteTermOption) {
+  return term.value === "2_no_discount" ? "2 years" : term.label;
+}
+
 function formatPlainNumber(value: number) {
   return value.toLocaleString("en-US", {
     maximumFractionDigits: 2,
@@ -2463,6 +2467,7 @@ function QuoteTable({
   documentText: DocumentText;
   onDocumentTextChange: DocumentTextChangeHandler;
 }) {
+  const termDocumentLabel = quoteTermDocumentLabel(term);
   const showResellerDiscountColumns =
     recipientType === "reseller" && totals.resellerDiscountPercent > 0;
   const quoteLines =
@@ -2494,10 +2499,10 @@ function QuoteTable({
                   onDocumentTextChange("optionLabelPrefix", value)
                 }
               />{" "}
-              {optionLetter}: {term.label}
+              {optionLetter}: {termDocumentLabel}
             </>
           ) : (
-            term.label
+            termDocumentLabel
           )}
         </h2>
       ) : null}
@@ -2770,7 +2775,7 @@ function QuoteTable({
           {totals.termDiscountAmount > 0 ? (
             <tr>
               <td>
-                {term.label}{" "}
+                {termDocumentLabel}{" "}
                 <EditableText
                   value={documentText.paidUpFrontDiscountSuffix}
                   placeholder="paid up front discount"
