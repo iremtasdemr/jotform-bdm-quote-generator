@@ -12,34 +12,28 @@ pnpm run dev
 
 Open `http://localhost:3000`.
 
-## Vercel Testing Deployment
+## Deployment
 
 1. Push this folder to a GitHub repository.
-2. In Vercel, choose **Add New > Project**.
-3. Import the GitHub repository.
-4. Keep the framework preset as **Next.js**.
-5. Deploy.
+2. Connect the repository to your deployment provider.
+3. Use these commands:
 
-Vercel will use the settings in `vercel.json`:
+```bash
+pnpm install
+pnpm run build
+```
 
-- Install command: `pnpm install`
-- Build command: `pnpm run build`
-- Development command: `pnpm run dev`
-
-After deployment, share the generated Vercel preview URL with the employee who
-needs to test it.
+After deployment, share the generated test URL with the employee who needs to
+test it.
 
 ## App Password
 
-Set this Vercel Environment Variable to turn on the built-in password screen:
+Set this environment variable to turn on the built-in password screen:
 
 - Name: `QUOTE_ACCESS_PASSWORD`
 - Value: the password testers should enter
-- Environment: Production
 
-After adding or changing the variable, create a new deployment from Vercel or
-push a new commit to GitHub. If `QUOTE_ACCESS_PASSWORD` is not set, the app stays
-open.
+If `QUOTE_ACCESS_PASSWORD` is not set, the app stays open.
 
 ## Cloudflare/Sites Build
 

@@ -470,13 +470,13 @@ function quoteNumberForSalesperson(name: string) {
 }
 
 function quotePdfTitle(proposal: ProposalData) {
-  const customerName = proposal.customerName.trim() || "Customer";
-  const safeCustomerName = customerName
+  const companyName = proposal.customerCompany.trim() || "Customer";
+  const safeCompanyName = companyName
     .replace(/[\\/:*?"<>|]/g, "")
     .replace(/\s+/g, " ")
     .trim();
 
-  return `${safeCustomerName || "Customer"} - Jotform Enterprise Quote`;
+  return `${safeCompanyName || "Customer"} - Jotform Enterprise Quote`;
 }
 
 function normalizeSalespersonName(name: string) {
