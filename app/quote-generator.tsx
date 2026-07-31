@@ -953,6 +953,8 @@ export function QuoteGenerator() {
   const [generatorPanelWidth, setGeneratorPanelWidth] = useState(
     defaultGeneratorPanelWidth,
   );
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const [isFeedbackFrameLoaded, setIsFeedbackFrameLoaded] = useState(false);
   const datedProposal = currentProposal(proposal);
 
   function maxAvailableGeneratorPanelWidth() {
@@ -989,6 +991,24 @@ export function QuoteGenerator() {
       window.removeEventListener("resize", syncGeneratorPanelWidth);
     };
   }, []);
+
+  useEffect(() => {
+    if (!isFeedbackOpen) return;
+
+    const previousBodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") setIsFeedbackOpen(false);
+    }
+
+    document.addEventListener("keydown", closeOnEscape);
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [isFeedbackOpen]);
 
   function updateProposal<K extends keyof ProposalData>(
     key: K,
@@ -1281,30 +1301,12 @@ export function QuoteGenerator() {
   }
 
   function openFeedbackForm() {
-    const popupWidth = 700;
-    const popupHeight = 500;
-    const popupLeft = Math.max(
-      0,
-      window.screenX + (window.outerWidth - popupWidth) / 2,
-    );
-    const popupTop = Math.max(
-      0,
-      window.screenY + (window.outerHeight - popupHeight) / 2,
-    );
+    setIsFeedbackFrameLoaded(false);
+    setIsFeedbackOpen(true);
+  }
 
-    window.open(
-      "https://form.jotform.com/262111315426041",
-      "jotform-feedback",
-      [
-        "popup=yes",
-        "scrollbars=yes",
-        "resizable=yes",
-        `width=${popupWidth}`,
-        `height=${popupHeight}`,
-        `left=${Math.round(popupLeft)}`,
-        `top=${Math.round(popupTop)}`,
-      ].join(","),
-    );
+  function closeFeedbackForm() {
+    setIsFeedbackOpen(false);
   }
 
   function refreshProposal() {
@@ -2003,6 +2005,45 @@ export function QuoteGenerator() {
           onRemoveDefaultDocumentNote={removeDefaultDocumentNote}
         />
       </section>
+
+      {isFeedbackOpen ? (
+        <div
+          className="feedback-modal-backdrop no-print"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) closeFeedbackForm();
+          }}
+        >
+          <section
+            className="feedback-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Give feedback"
+          >
+            <button
+              className="feedback-modal-close"
+              type="button"
+              onClick={closeFeedbackForm}
+              aria-label="Close feedback form"
+              autoFocus
+            >
+              ×
+            </button>
+            <div className="feedback-modal-body">
+              {!isFeedbackFrameLoaded ? (
+                <div className="feedback-modal-loading" role="status">
+                  Loading feedback form…
+                </div>
+              ) : null}
+              <iframe
+                className="feedback-modal-frame"
+                src="https://form.jotform.com/262111315426041"
+                title="Give feedback form"
+                onLoad={() => setIsFeedbackFrameLoaded(true)}
+              />
+            </div>
+          </section>
+        </div>
+      ) : null}
     </main>
   );
 }
