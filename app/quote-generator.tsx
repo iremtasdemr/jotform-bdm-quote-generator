@@ -4,8 +4,9 @@ import type {
   CSSProperties,
   PointerEvent as ReactPointerEvent,
 } from "react";
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import Script from "next/script";
 import {
   currencyCodes,
   currencySymbols,
@@ -13,6 +14,29 @@ import {
   type CurrencyCode,
   type ProductPrice,
 } from "./pricing-data";
+
+type JotformFeedbackConstructor = new (options: {
+  type: boolean;
+  width: number;
+  height: number;
+  fontColor: string;
+  background: string;
+  isCardForm: boolean;
+  formId: string;
+  buttonText: string;
+  buttonSide: string;
+  buttonAlign: string;
+  base: string;
+}) => {
+  componentID: string;
+};
+
+declare global {
+  interface Window {
+    JotformFeedback?: JotformFeedbackConstructor;
+    jotformEmbedHandler?: (selector: string, base: string) => void;
+  }
+}
 
 type PricingRow = {
   id: string;
@@ -940,6 +964,10 @@ export function QuoteGenerator() {
   const [generatorPanelWidth, setGeneratorPanelWidth] = useState(
     defaultGeneratorPanelWidth,
   );
+  const [feedbackLibraryReady, setFeedbackLibraryReady] = useState(false);
+  const [embedHandlerReady, setEmbedHandlerReady] = useState(false);
+  const feedbackComponentId = useRef("");
+  const feedbackEmbedInitialized = useRef(false);
   const datedProposal = currentProposal(proposal);
 
   function maxAvailableGeneratorPanelWidth() {
@@ -976,6 +1004,43 @@ export function QuoteGenerator() {
       window.removeEventListener("resize", syncGeneratorPanelWidth);
     };
   }, []);
+
+  useEffect(() => {
+    if (
+      feedbackLibraryReady &&
+      !feedbackComponentId.current &&
+      window.JotformFeedback
+    ) {
+      const feedback = new window.JotformFeedback({
+        type: false,
+        width: 700,
+        height: 500,
+        fontColor: "#FFFFFF",
+        background: "#F59202",
+        isCardForm: false,
+        formId: "262111315426041",
+        buttonText: "Feedback",
+        buttonSide: "left",
+        buttonAlign: "center",
+        base: "https://form.jotform.com/",
+      });
+
+      feedbackComponentId.current = feedback.componentID;
+    }
+
+    if (
+      embedHandlerReady &&
+      feedbackComponentId.current &&
+      !feedbackEmbedInitialized.current &&
+      window.jotformEmbedHandler
+    ) {
+      window.jotformEmbedHandler(
+        `iframe[id='${feedbackComponentId.current}_iframe']`,
+        "https://form.jotform.com/",
+      );
+      feedbackEmbedInitialized.current = true;
+    }
+  }, [feedbackLibraryReady, embedHandlerReady]);
 
   function updateProposal<K extends keyof ProposalData>(
     key: K,
@@ -1321,14 +1386,27 @@ export function QuoteGenerator() {
   const standardDiscountOptions = eligibilityDiscountOptions;
 
   return (
-    <main
-      className="proposal-app"
-      style={
-        {
-          "--generator-panel-width": `${generatorPanelWidth}px`,
-        } as CSSProperties
-      }
-    >
+    <>
+      <Script
+        id="jotform-feedback-library"
+        src="https://cdn.jotfor.ms/s/static/latest/static/feedback2.js"
+        strategy="afterInteractive"
+        onReady={() => setFeedbackLibraryReady(true)}
+      />
+      <Script
+        id="jotform-embed-handler"
+        src="https://cdn.jotfor.ms/s/umd/latest/for-form-embed-handler.js"
+        strategy="afterInteractive"
+        onReady={() => setEmbedHandlerReady(true)}
+      />
+      <main
+        className="proposal-app"
+        style={
+          {
+            "--generator-panel-width": `${generatorPanelWidth}px`,
+          } as CSSProperties
+        }
+      >
       <aside className="generator-panel no-print">
         <div className="generator-header">
           <div className="site-brand">
@@ -1936,14 +2014,6 @@ export function QuoteGenerator() {
           <button className="primary-button" onClick={printProposal}>
             Download PDF
           </button>
-          <a
-            className="secondary-button feedback-button"
-            href="https://form.jotform.com/262111315426041"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Give Feedback
-          </a>
           <button className="secondary-button" onClick={refreshProposal}>
             Refresh
           </button>
@@ -1964,7 +2034,8 @@ export function QuoteGenerator() {
           onRemoveDefaultDocumentNote={removeDefaultDocumentNote}
         />
       </section>
-    </main>
+      </main>
+    </>
   );
 }
 
