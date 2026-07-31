@@ -4,9 +4,8 @@ import type {
   CSSProperties,
   PointerEvent as ReactPointerEvent,
 } from "react";
-import { Fragment, useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import Image from "next/image";
-import Script from "next/script";
 import {
   currencyCodes,
   currencySymbols,
@@ -14,28 +13,6 @@ import {
   type CurrencyCode,
   type ProductPrice,
 } from "./pricing-data";
-
-type JotformFeedbackConstructor = new (options: {
-  type: boolean;
-  width: number;
-  height: number;
-  fontColor: string;
-  background: string;
-  isCardForm: boolean;
-  formId: string;
-  windowTitle: string;
-  openOnLoad: boolean;
-  base: string;
-}) => {
-  componentID: string;
-};
-
-declare global {
-  interface Window {
-    JotformFeedback?: JotformFeedbackConstructor;
-    jotformEmbedHandler?: (selector: string, base: string) => void;
-  }
-}
 
 type PricingRow = {
   id: string;
@@ -963,10 +940,6 @@ export function QuoteGenerator() {
   const [generatorPanelWidth, setGeneratorPanelWidth] = useState(
     defaultGeneratorPanelWidth,
   );
-  const [feedbackLibraryReady, setFeedbackLibraryReady] = useState(false);
-  const [embedHandlerReady, setEmbedHandlerReady] = useState(false);
-  const feedbackComponentId = useRef("");
-  const feedbackEmbedInitialized = useRef(false);
   const datedProposal = currentProposal(proposal);
 
   function maxAvailableGeneratorPanelWidth() {
@@ -1003,42 +976,6 @@ export function QuoteGenerator() {
       window.removeEventListener("resize", syncGeneratorPanelWidth);
     };
   }, []);
-
-  useEffect(() => {
-    if (
-      feedbackLibraryReady &&
-      !feedbackComponentId.current &&
-      window.JotformFeedback
-    ) {
-      const feedback = new window.JotformFeedback({
-        type: false,
-        width: 700,
-        height: 500,
-        fontColor: "#FFFFFF",
-        background: "#070F4F",
-        isCardForm: false,
-        formId: "262111315426041",
-        windowTitle: "Feedback",
-        openOnLoad: false,
-        base: "https://form.jotform.com/",
-      });
-
-      feedbackComponentId.current = feedback.componentID;
-    }
-
-    if (
-      embedHandlerReady &&
-      feedbackComponentId.current &&
-      !feedbackEmbedInitialized.current &&
-      window.jotformEmbedHandler
-    ) {
-      window.jotformEmbedHandler(
-        `iframe[id='${feedbackComponentId.current}_iframe']`,
-        "https://form.jotform.com/",
-      );
-      feedbackEmbedInitialized.current = true;
-    }
-  }, [feedbackLibraryReady, embedHandlerReady]);
 
   function updateProposal<K extends keyof ProposalData>(
     key: K,
@@ -1330,6 +1267,33 @@ export function QuoteGenerator() {
     window.setTimeout(restoreTitle, 60000);
   }
 
+  function openFeedbackForm() {
+    const popupWidth = 700;
+    const popupHeight = 500;
+    const popupLeft = Math.max(
+      0,
+      window.screenX + (window.outerWidth - popupWidth) / 2,
+    );
+    const popupTop = Math.max(
+      0,
+      window.screenY + (window.outerHeight - popupHeight) / 2,
+    );
+
+    window.open(
+      "https://form.jotform.com/262111315426041",
+      "jotform-feedback",
+      [
+        "popup=yes",
+        "scrollbars=yes",
+        "resizable=yes",
+        `width=${popupWidth}`,
+        `height=${popupHeight}`,
+        `left=${Math.round(popupLeft)}`,
+        `top=${Math.round(popupTop)}`,
+      ].join(","),
+    );
+  }
+
   function refreshProposal() {
     setProposal(cloneProposal(emptyProposal));
   }
@@ -1384,27 +1348,14 @@ export function QuoteGenerator() {
   const standardDiscountOptions = eligibilityDiscountOptions;
 
   return (
-    <>
-      <Script
-        id="jotform-feedback-library"
-        src="https://cdn.jotfor.ms/s/static/latest/static/feedback2.js"
-        strategy="afterInteractive"
-        onReady={() => setFeedbackLibraryReady(true)}
-      />
-      <Script
-        id="jotform-embed-handler"
-        src="https://cdn.jotfor.ms/s/umd/latest/for-form-embed-handler.js"
-        strategy="afterInteractive"
-        onReady={() => setEmbedHandlerReady(true)}
-      />
-      <main
-        className="proposal-app"
-        style={
-          {
-            "--generator-panel-width": `${generatorPanelWidth}px`,
-          } as CSSProperties
-        }
-      >
+    <main
+      className="proposal-app"
+      style={
+        {
+          "--generator-panel-width": `${generatorPanelWidth}px`,
+        } as CSSProperties
+      }
+    >
       <aside className="generator-panel no-print">
         <div className="generator-header">
           <div className="site-brand">
@@ -2013,8 +1964,9 @@ export function QuoteGenerator() {
             Download PDF
           </button>
           <button
-            className="secondary-button lightbox-262111315426041"
+            className="secondary-button"
             type="button"
+            onClick={openFeedbackForm}
           >
             Feedback
           </button>
@@ -2038,8 +1990,7 @@ export function QuoteGenerator() {
           onRemoveDefaultDocumentNote={removeDefaultDocumentNote}
         />
       </section>
-      </main>
-    </>
+    </main>
   );
 }
 
