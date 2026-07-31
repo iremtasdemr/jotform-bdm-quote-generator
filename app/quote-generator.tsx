@@ -349,6 +349,19 @@ const salespersonOptions = [
   { name: "Richard Martin", email: "richardmartin@jotform.com" },
   { name: "Austin Schaefer", email: "austinschaefer@jotform.com" },
   { name: "Selena Hart", email: "selenahart@jotform.com" },
+  { name: "Jeri Resor", email: "jeri.resor@jotform.com" },
+  { name: "Janelle Maffucci", email: "janelle@jotform.com" },
+  { name: "Chloe Waters", email: "chloewaters@jotform.com" },
+  { name: "Mariana Alzate", email: "mariana@jotform.com" },
+  { name: "Gage Deschambeault", email: "gage@jotform.com" },
+  { name: "Neville Burton", email: "nevilleburton@jotform.com" },
+  { name: "Adam Gleisner", email: "adamgleisner@jotform.com" },
+  { name: "Ben Hanks", email: "benhanks@jotform.com" },
+  { name: "Lewis Johnson", email: "lewis@jotform.com" },
+  { name: "Laura Lindberg", email: "laura.lindberg@jotform.com" },
+  { name: "Fatma Tan", email: "fatmatan@jotform.com" },
+  { name: "Miray Doyduk", email: "miray@jotform.com" },
+  { name: "Ezgisu Yılmaz", email: "ezgisu@jotform.com" },
 ];
 
 const legacySalespersonNameMap = new Map([
