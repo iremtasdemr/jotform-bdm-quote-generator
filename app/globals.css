@@ -308,6 +308,10 @@ button {
   background: #f8f9fc;
 }
 
+.feedback-button {
+  text-decoration: none;
+}
+
 .icon-button {
   width: 2.25rem;
   height: 2.25rem;

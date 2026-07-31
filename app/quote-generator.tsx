@@ -1936,6 +1936,14 @@ export function QuoteGenerator() {
           <button className="primary-button" onClick={printProposal}>
             Download PDF
           </button>
+          <a
+            className="secondary-button feedback-button"
+            href="https://form.jotform.com/262111315426041"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Give Feedback
+          </a>
           <button className="secondary-button" onClick={refreshProposal}>
             Refresh
           </button>
