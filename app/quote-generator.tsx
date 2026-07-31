@@ -1981,7 +1981,7 @@ export function QuoteGenerator() {
             type="button"
             onClick={openFeedbackForm}
           >
-            Feedback
+            Give feedback
           </button>
           <button className="secondary-button" onClick={refreshProposal}>
             Refresh
