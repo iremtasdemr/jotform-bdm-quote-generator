@@ -172,8 +172,29 @@ button {
   padding: 0.4rem 0.2rem 1rem;
 }
 
+.generator-brand {
+  display: grid;
+  justify-items: start;
+  gap: 0.55rem;
+}
+
+.enterprise-wordmark-wrap {
+  display: inline-flex;
+  align-items: center;
+}
+
+.enterprise-wordmark {
+  display: block;
+  width: 10.75rem;
+  aspect-ratio: 1145 / 139;
+  background: #070f4f;
+  mask: url("/jotform-enterprise-wordmark.png") center / contain no-repeat;
+  -webkit-mask: url("/jotform-enterprise-wordmark.png") center / contain no-repeat;
+}
+
 .generator-header h1 {
-  margin: 0.1rem 0 0;
+  margin: 0;
+  color: #070f4f;
   font-size: 1.75rem;
   line-height: 1.1;
 }
@@ -707,18 +728,32 @@ button {
   height: 100vh;
   min-width: 0;
   overflow: auto;
-  padding: 1rem 1.25rem 3rem;
+  padding: 5.25rem 1.25rem 3rem;
 }
 
 .preview-actions {
-  position: sticky;
-  top: 0.75rem;
-  z-index: 5;
+  position: fixed;
+  top: 1rem;
+  right: 1.25rem;
+  left: calc(var(--generator-panel-width, 520px) + 8px + 1.25rem);
+  z-index: 20;
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 0.55rem;
-  margin-bottom: 1rem;
+  padding: 0.5rem;
+  border: 1px solid rgba(201, 206, 218, 0.85);
+  border-radius: 8px;
+  background: rgba(245, 246, 248, 0.94);
+  box-shadow: 0 8px 24px rgba(17, 24, 39, 0.12);
+  backdrop-filter: blur(8px);
+}
+
+.preview-actions .primary-button,
+.preview-actions .secondary-button {
+  min-height: 2.15rem;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.78rem;
 }
 
 .feedback-modal-backdrop {
@@ -1705,14 +1740,19 @@ button {
 
 @media (max-width: 1640px) {
   .proposal-app {
+    width: 100%;
+    max-width: 100vw;
     height: auto;
     grid-template-columns: 1fr;
     background: var(--background);
-    overflow: visible;
+    overflow-x: clip;
+    overflow-y: visible;
   }
 
   .generator-panel {
     position: static;
+    width: 100%;
+    min-width: 0;
     height: auto;
     overflow: visible;
     border-right: 0;
@@ -1724,8 +1764,33 @@ button {
   }
 
   .preview-shell {
+    width: 100%;
+    max-width: 100vw;
     height: auto;
     overflow: visible;
+    padding: 1rem 1.25rem 3rem;
+  }
+
+  .quote-output {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    padding-bottom: 0.75rem;
+  }
+
+  .quote-page {
+    width: 8.5in;
+    min-width: 8.5in;
+    margin-inline: auto;
+  }
+
+  .preview-actions {
+    position: sticky;
+    top: 0.75rem;
+    right: auto;
+    left: auto;
+    margin: 0 0 1rem auto;
   }
 }
 
@@ -1740,6 +1805,22 @@ button {
     max-height: none;
     border: 0;
     border-radius: 0;
+  }
+
+  .generator-header {
+    padding-bottom: 0.75rem;
+  }
+
+  .generator-brand {
+    gap: 0.4rem;
+  }
+
+  .enterprise-wordmark {
+    width: 8.5rem;
+  }
+
+  .generator-header h1 {
+    font-size: 1.45rem;
   }
 
   .form-grid,
@@ -1787,6 +1868,26 @@ button {
 
   .preview-shell {
     padding: 0.75rem;
+  }
+
+  .preview-actions {
+    top: 0.75rem;
+    right: auto;
+    left: auto;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+    max-width: none;
+    gap: 0.35rem;
+    padding: 0.35rem;
+  }
+
+  .preview-actions .primary-button,
+  .preview-actions .secondary-button {
+    min-width: 0;
+    min-height: 2.15rem;
+    padding: 0.35rem 0.45rem;
+    font-size: 0.76rem;
   }
 
   .proposal-page {

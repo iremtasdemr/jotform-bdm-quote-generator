@@ -1373,20 +1373,15 @@ export function QuoteGenerator() {
     >
       <aside className="generator-panel no-print">
         <div className="generator-header">
-          <div className="site-brand">
-            <Image
-              className="site-brand-logo"
-              src="/jotform-logo.png"
-              alt=""
-              aria-hidden="true"
-              width={51}
-              height={50}
-              unoptimized
-            />
-            <div>
-              <p className="kicker">Jotform Enterprise</p>
-              <h1>Quote Generator</h1>
+          <div className="generator-brand">
+            <div className="enterprise-wordmark-wrap">
+              <span
+                className="enterprise-wordmark"
+                role="img"
+                aria-label="Jotform Enterprise"
+              />
             </div>
+            <h1>Quote Generator</h1>
           </div>
         </div>
 
