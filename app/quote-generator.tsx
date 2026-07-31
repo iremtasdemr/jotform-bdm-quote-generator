@@ -1375,10 +1375,14 @@ export function QuoteGenerator() {
         <div className="generator-header">
           <div className="generator-brand">
             <div className="enterprise-wordmark-wrap">
-              <span
+              <Image
                 className="enterprise-wordmark"
-                role="img"
-                aria-label="Jotform Enterprise"
+                src="/jotform-enterprise-wordmark-hd.png"
+                alt="Jotform Enterprise"
+                width={4580}
+                height={556}
+                unoptimized
+                priority
               />
             </div>
             <h1>Quote Generator</h1>
@@ -2142,11 +2146,11 @@ function QuotePage({
         <div className="quote-logo">
           <Image
             className="quote-brand-mark"
-            src="/jotform-logo.png"
+            src="/jotform-mark.svg"
             alt=""
             aria-hidden="true"
-            width={51}
-            height={50}
+            width={350}
+            height={370}
             unoptimized
           />
           <EditableText

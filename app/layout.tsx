@@ -5,8 +5,8 @@ export const metadata: Metadata = {
   title: "Jotform Enterprise Quote Generator",
   description: "Create customer-ready Jotform Enterprise quote PDFs.",
   icons: {
-    icon: "/jotform-logo.png",
-    shortcut: "/jotform-logo.png",
+    icon: "/jotform-mark.svg",
+    shortcut: "/jotform-mark.svg",
   },
 };
 

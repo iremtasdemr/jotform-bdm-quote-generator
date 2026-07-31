@@ -19,7 +19,7 @@ export default async function AccessPage({
         <div className="site-brand access-brand">
           <Image
             className="site-brand-logo"
-            src="/jotform-logo.png"
+            src="/jotform-mark.svg"
             alt=""
             aria-hidden="true"
             width={51}

@@ -185,11 +185,9 @@ button {
 
 .enterprise-wordmark {
   display: block;
-  width: 10.75rem;
-  aspect-ratio: 1145 / 139;
-  background: #070f4f;
-  mask: url("/jotform-enterprise-wordmark.png") center / contain no-repeat;
-  -webkit-mask: url("/jotform-enterprise-wordmark.png") center / contain no-repeat;
+  width: 10rem;
+  height: auto;
+  object-fit: contain;
 }
 
 .generator-header h1 {
@@ -1816,7 +1814,7 @@ button {
   }
 
   .enterprise-wordmark {
-    width: 8.5rem;
+    width: 10rem;
   }
 
   .generator-header h1 {
