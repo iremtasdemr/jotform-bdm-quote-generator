@@ -23,9 +23,8 @@ type JotformFeedbackConstructor = new (options: {
   background: string;
   isCardForm: boolean;
   formId: string;
-  buttonText: string;
-  buttonSide: string;
-  buttonAlign: string;
+  windowTitle: string;
+  openOnLoad: boolean;
   base: string;
 }) => {
   componentID: string;
@@ -1016,12 +1015,11 @@ export function QuoteGenerator() {
         width: 700,
         height: 500,
         fontColor: "#FFFFFF",
-        background: "#F59202",
+        background: "#070F4F",
         isCardForm: false,
         formId: "262111315426041",
-        buttonText: "Feedback",
-        buttonSide: "left",
-        buttonAlign: "center",
+        windowTitle: "Feedback",
+        openOnLoad: false,
         base: "https://form.jotform.com/",
       });
 
@@ -2013,6 +2011,12 @@ export function QuoteGenerator() {
         <div className="preview-actions no-print">
           <button className="primary-button" onClick={printProposal}>
             Download PDF
+          </button>
+          <button
+            className="secondary-button lightbox-262111315426041"
+            type="button"
+          >
+            Feedback
           </button>
           <button className="secondary-button" onClick={refreshProposal}>
             Refresh
