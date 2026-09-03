@@ -21,6 +21,8 @@ type PricingRow = {
   quantity: string;
   unitPriceOverride?: string;
   waived?: boolean;
+  resellerDiscountEligible?: boolean;
+  multiUserDiscountPercent?: string;
 };
 
 type PricingOption = {
@@ -135,11 +137,15 @@ type ProposalData = {
   customDiscountName: string;
   customDiscountPercent: string;
   selectedQuoteTerms: QuoteTermValue[];
+  multiYearDiscountEnabled: boolean;
+  multiYearDiscountPercent: string;
   customQuoteTermLabel: string;
   customQuoteTermMonths: string;
   customQuoteTermDiscountPercent: string;
   pricingOptions: PricingOption[];
   additionalNotes: string[];
+  redlinesDisclaimerEnabled: boolean;
+  redlinesDisclaimerText: string;
   documentText: DocumentText;
 };
 
@@ -165,13 +171,18 @@ type CalculatedLine = {
   quantity: number;
   defaultUnitPrice: number;
   unitPrice: number;
+  effectiveUnitPrice: number;
+  listTotal: number;
   total: number;
+  multiUserDiscountPercent: number;
+  multiUserDiscountAmount: number;
   eligibilityDiscountAmount: number;
   resellerDiscountAmount: number;
 };
 
 type OptionTotals = {
   lines: CalculatedLine[];
+  listPriceSubtotal: number;
   recurringSubtotal: number;
   oneTimeSubtotal: number;
   subtotalBeforeDiscounts: number;
@@ -182,6 +193,9 @@ type OptionTotals = {
   resellerDiscountPercent: number;
   resellerDiscountAmount: number;
   customDiscountAmount: number;
+  multiYearDiscountEnabled: boolean;
+  multiYearDiscountAmount: number;
+  multiYearDiscountPercent: number;
   termDiscountAmount: number;
   totalDiscountAmount: number;
   total: number;
@@ -314,9 +328,15 @@ const productByName = new Map(
 
 const defaultBasePackageName = "Jotform Enterprise Base Package (includes 5 users)";
 const customProductName = "Add another product";
+const additionalFiveUserBundleName = "Additional 5 User Bundle";
+const discountedFiveUserBundleName =
+  "Additional 5 User Bundle - Discounted";
+const redlinesDisclaimerDefault =
+  "Jotform only considers legal changes on a 3+ year agreement or if the Total Contract Value is greater than $30,000 USD.";
 const legacyProductNameMap = new Map([
   ["Onboarding Fee", "Enterprise Onboarding"],
   ["Custom One-Time Fee", "Professional Services"],
+  [discountedFiveUserBundleName, additionalFiveUserBundleName],
   ["Salesforce AppExchange Package*", "Salesforce AppExchange Package"],
   [
     "Salesforce AppExchange Per User Additional Fee**",
@@ -325,7 +345,8 @@ const legacyProductNameMap = new Map([
 ]);
 const eligibilityDiscountProductNames = new Set([
   "Additional User",
-  "Additional 5 User Bundle",
+  additionalFiveUserBundleName,
+  discountedFiveUserBundleName,
   "Salesforce AppExchange Per User Additional Fee",
 ]);
 
@@ -349,6 +370,7 @@ const salespersonOptions = [
   { name: "Richard Martin", email: "richardmartin@jotform.com" },
   { name: "Austin Schaefer", email: "austinschaefer@jotform.com" },
   { name: "Selena Hart", email: "selenahart@jotform.com" },
+  { name: "Raşit Vardar", email: "rasitvardar@jotform.com" },
   { name: "Jeri Resor", email: "jeri.resor@jotform.com" },
   { name: "Janelle Maffucci", email: "janelle@jotform.com" },
   { name: "Chloe Waters", email: "chloewaters@jotform.com" },
@@ -382,8 +404,8 @@ const defaultDocumentText: DocumentText = {
   customerHeadingExtra: "",
   resellerHeading: "To Reseller:",
   resellerHeadingExtra: "",
-  nameLabel: "Name",
-  addressLabel: "Address",
+  nameLabel: "Name:",
+  addressLabel: "Address:",
   optionLabelPrefix: "Option",
   platformHeader: "Platform",
   quantityHeader: "Quantity",
@@ -426,6 +448,8 @@ const emptyProposal: ProposalData = {
   customDiscountName: "",
   customDiscountPercent: "",
   selectedQuoteTerms: ["1"],
+  multiYearDiscountEnabled: false,
+  multiYearDiscountPercent: "",
   customQuoteTermLabel: "",
   customQuoteTermMonths: "",
   customQuoteTermDiscountPercent: "",
@@ -436,11 +460,13 @@ const emptyProposal: ProposalData = {
     },
   ],
   additionalNotes: [],
+  redlinesDisclaimerEnabled: false,
+  redlinesDisclaimerText: redlinesDisclaimerDefault,
   documentText: normalizeDocumentText(),
 };
 
 function row(id: string, productName: string, quantity: string): PricingRow {
-  return { id, productName, quantity };
+  return { id, productName, quantity, resellerDiscountEligible: true };
 }
 
 function cloneProposal(source: ProposalData): ProposalData {
@@ -531,6 +557,11 @@ function currentProposal(source: ProposalData): ProposalData {
     customDiscountName: "",
     customDiscountPercent: "",
     selectedQuoteTerms: normalizeQuoteTermValues(source.selectedQuoteTerms),
+    multiYearDiscountEnabled: source.multiYearDiscountEnabled === true,
+    multiYearDiscountPercent:
+      typeof source.multiYearDiscountPercent === "string"
+        ? source.multiYearDiscountPercent
+        : "",
     customQuoteTermLabel: source.customQuoteTermLabel || "",
     customQuoteTermMonths:
       source.customQuoteTermMonths ||
@@ -539,6 +570,11 @@ function currentProposal(source: ProposalData): ProposalData {
     pricingOptions: source.pricingOptions?.length
       ? source.pricingOptions.map(normalizePricingOption)
       : cloneProposal(emptyProposal).pricingOptions,
+    redlinesDisclaimerEnabled: source.redlinesDisclaimerEnabled === true,
+    redlinesDisclaimerText:
+      typeof source.redlinesDisclaimerText === "string"
+        ? source.redlinesDisclaimerText
+        : redlinesDisclaimerDefault,
     proposalDate: todayQuoteDate(),
     documentText: normalizeDocumentText(source.documentText),
   };
@@ -637,6 +673,14 @@ function normalizeDocumentText(source?: Partial<DocumentText>): DocumentText {
     normalizedSource.customDiscountLabel = defaultDocumentText.customDiscountLabel;
   }
 
+  if (normalizedSource.nameLabel === "Name") {
+    normalizedSource.nameLabel = defaultDocumentText.nameLabel;
+  }
+
+  if (normalizedSource.addressLabel === "Address") {
+    normalizedSource.addressLabel = defaultDocumentText.addressLabel;
+  }
+
   return {
     ...defaultDocumentText,
     ...normalizedSource,
@@ -717,7 +761,27 @@ function normalizeProductName(productName: string) {
   return legacyProductNameMap.get(productName) || productName;
 }
 
+function isFiveUserBundleProductName(productName: string) {
+  return (
+    productName === additionalFiveUserBundleName ||
+    productName === discountedFiveUserBundleName
+  );
+}
+
+function fiveUserBundleDiscountPercent(
+  productName: string,
+  eligibilityDiscountPercent: number,
+) {
+  if (!isFiveUserBundleProductName(productName)) return 0;
+
+  return eligibilityDiscountPercent > 0 ? 15 : 30;
+}
+
 function quoteProductLabel(productName: string) {
+  if (isFiveUserBundleProductName(productName)) {
+    return additionalFiveUserBundleName;
+  }
+
   return productName.replace(/\(includes ([35]) users\)/g, "(includes $1 Users)");
 }
 
@@ -735,6 +799,12 @@ function normalizePricingOption(
           quantity: pricingRow.quantity || "",
           unitPriceOverride: pricingRow.unitPriceOverride || "",
           waived: pricingRow.waived || false,
+          resellerDiscountEligible:
+            pricingRow.resellerDiscountEligible !== false,
+          multiUserDiscountPercent:
+            typeof pricingRow.multiUserDiscountPercent === "string"
+              ? pricingRow.multiUserDiscountPercent
+              : "",
         }))
       : [row(newId("row"), "", "")],
   };
@@ -757,6 +827,10 @@ function normalizedMoneyInput(value: string) {
 
 function positiveNumber(value: string, fallback = 0) {
   return Math.max(0, numberFromInput(value, fallback));
+}
+
+function percentageFromInput(value: string, fallback = 0) {
+  return Math.min(100, positiveNumber(value, fallback));
 }
 
 function formatMoney(value: number, currency: CurrencyCode) {
@@ -848,12 +922,17 @@ function calculateOption(
   term: QuoteTermOption,
   eligibilityDiscountType: EligibilityDiscountType,
   resellerDiscountType: ResellerDiscountType,
+  multiYearDiscountEnabled: boolean,
+  multiYearDiscountInput: string,
   customDiscountInput: string,
 ): OptionTotals {
   const eligibilityDiscount = eligibilityDiscountForType(
     eligibilityDiscountType,
   );
   const resellerDiscount = resellerDiscountForType(resellerDiscountType);
+  const multiYearDiscountPercent = multiYearDiscountEnabled
+    ? percentageFromInput(multiYearDiscountInput)
+    : 0;
   const customDiscountPercent = positiveNumber(customDiscountInput);
   const termDiscountPercent = term.discountPercent;
 
@@ -864,14 +943,28 @@ function calculateOption(
     const unitPrice = unitPriceFromRow(pricingRow, defaultUnitPrice);
     const termMultiplier = product?.annual === false ? 1 : term.years;
     const isWaived = product?.category === "One-Time Fees" && pricingRow.waived;
-    const total = isWaived ? 0 : unitPrice * quantity * termMultiplier;
+    const multiUserDiscountPercent =
+      fiveUserBundleDiscountPercent(
+        pricingRow.productName,
+        eligibilityDiscount.percent,
+      );
+    const baseTotal = unitPrice * quantity * termMultiplier;
+    const multiUserDiscountAmount =
+      baseTotal * (multiUserDiscountPercent / 100);
+    const effectiveUnitPrice =
+      unitPrice * (1 - multiUserDiscountPercent / 100);
+    const total = isWaived ? 0 : baseTotal - multiUserDiscountAmount;
     const line: CalculatedLine = {
       row: pricingRow,
       product,
       quantity,
       defaultUnitPrice,
       unitPrice,
+      effectiveUnitPrice,
+      listTotal: isWaived ? 0 : baseTotal,
       total,
+      multiUserDiscountPercent,
+      multiUserDiscountAmount: isWaived ? 0 : multiUserDiscountAmount,
       eligibilityDiscountAmount: 0,
       resellerDiscountAmount: 0,
     };
@@ -881,7 +974,10 @@ function calculateOption(
       eligibilityDiscountAmount: isEligibilityDiscountLine(line)
         ? total * (eligibilityDiscount.percent / 100)
         : 0,
-      resellerDiscountAmount: total * (resellerDiscount.percent / 100),
+      resellerDiscountAmount:
+        pricingRow.resellerDiscountEligible !== false
+          ? total * (resellerDiscount.percent / 100)
+          : 0,
     };
   });
 
@@ -891,6 +987,10 @@ function calculateOption(
   const oneTimeSubtotal = lines
     .filter((line) => line.product?.annual === false)
     .reduce((sum, line) => sum + line.total, 0);
+  const listPriceSubtotal = lines.reduce(
+    (sum, line) => sum + line.listTotal,
+    0,
+  );
   const eligibilityDiscountAmount = lines.reduce(
     (sum, line) => sum + line.eligibilityDiscountAmount,
     0,
@@ -906,21 +1006,27 @@ function calculateOption(
     recurringResellerDiscountAmount;
   const recurringAfterStandardDiscounts =
     recurringSubtotal - eligibilityDiscountAmount - recurringResellerDiscountAmount;
+  const multiYearDiscountAmount =
+    recurringAfterStandardDiscounts * (multiYearDiscountPercent / 100);
+  const recurringAfterMultiYear =
+    recurringAfterStandardDiscounts - multiYearDiscountAmount;
   const customDiscountAmount =
-    recurringAfterStandardDiscounts * (customDiscountPercent / 100);
+    recurringAfterMultiYear * (customDiscountPercent / 100);
   const recurringAfterCustom =
-    recurringAfterStandardDiscounts - customDiscountAmount;
+    recurringAfterMultiYear - customDiscountAmount;
   const termDiscountAmount =
     recurringAfterCustom * (termDiscountPercent / 100);
   const subtotalBeforeDiscounts = recurringSubtotal + oneTimeSubtotal;
   const totalDiscountAmount =
     eligibilityDiscountAmount +
     resellerDiscountAmount +
+    multiYearDiscountAmount +
     customDiscountAmount +
     termDiscountAmount;
 
   return {
     lines,
+    listPriceSubtotal,
     recurringSubtotal,
     oneTimeSubtotal,
     subtotalBeforeDiscounts,
@@ -931,6 +1037,9 @@ function calculateOption(
     resellerDiscountPercent: resellerDiscount.percent,
     resellerDiscountAmount,
     customDiscountAmount,
+    multiYearDiscountEnabled,
+    multiYearDiscountAmount,
+    multiYearDiscountPercent,
     termDiscountAmount,
     totalDiscountAmount,
     total:
@@ -1348,16 +1457,19 @@ export function QuoteGenerator() {
     datedProposal.selectedQuoteTerms,
     datedProposal,
   );
-  const editorTerm =
+  const selectedEditorTerm =
     selectedTermsForTotals.find((term) => term.value === "custom") ||
     selectedTermsForTotals[0] ||
     quoteTermOptions[0];
+  const editorTerm = selectedEditorTerm;
   const editorTotals = calculateOption(
     pricingOption,
     datedProposal.currency,
     editorTerm,
     datedProposal.eligibilityDiscountType,
     datedProposal.resellerDiscountType,
+    datedProposal.multiYearDiscountEnabled,
+    datedProposal.multiYearDiscountPercent,
     datedProposal.customDiscountPercent,
   );
   const standardDiscountOptions = eligibilityDiscountOptions;
@@ -1620,6 +1732,7 @@ export function QuoteGenerator() {
                                 ? "1"
                                 : pricingRow.quantity,
                             unitPriceOverride: "",
+                            multiUserDiscountPercent: "",
                             waived:
                               nextProduct?.category === "One-Time Fees"
                                 ? pricingRow.waived
@@ -1636,7 +1749,8 @@ export function QuoteGenerator() {
                               .filter(
                                 (product) =>
                                   product.category === group &&
-                                  product.product !== customProductName,
+                                  product.product !== customProductName &&
+                                  product.product !== discountedFiveUserBundleName,
                               )
                               .map((product) => (
                                 <option
@@ -1652,6 +1766,27 @@ export function QuoteGenerator() {
                           {customProductName}
                         </option>
                       </select>
+                      {proposal.recipientType === "reseller" ? (
+                        <label className="row-reseller-discount-control">
+                          <input
+                            type="checkbox"
+                            checked={
+                              pricingRow.resellerDiscountEligible !== false
+                            }
+                            onChange={(event) =>
+                              updatePricingRow(
+                                pricingOption.id,
+                                pricingRow.id,
+                                {
+                                  resellerDiscountEligible:
+                                    event.target.checked,
+                                },
+                              )
+                            }
+                          />
+                          <span>Apply reseller discount</span>
+                        </label>
+                      ) : null}
                       {isCustomProduct ? (
                         <input
                           className={`field compact-field custom-product-name-field ${
@@ -1836,8 +1971,45 @@ export function QuoteGenerator() {
                     </option>
                   ))}
                 </select>
+                <small className="reseller-discount-help">
+                  Applied to every item by default. Clear the checkbox on any
+                  quote item to exclude it.
+                </small>
               </label>
             ) : null}
+            <div className="multi-year-discount-control standard-discount-field">
+              <label className="multi-year-discount-toggle">
+                <input
+                  type="checkbox"
+                  checked={datedProposal.multiYearDiscountEnabled}
+                  onChange={(event) =>
+                    updateProposal(
+                      "multiYearDiscountEnabled",
+                      event.target.checked,
+                    )
+                  }
+                />
+                <span>Multi Year</span>
+              </label>
+              {datedProposal.multiYearDiscountEnabled ? (
+                <label className="field-label">
+                  Discount %
+                  <input
+                    className="field"
+                    inputMode="decimal"
+                    value={proposal.multiYearDiscountPercent}
+                    placeholder="e.g. 10"
+                    onChange={(event) =>
+                      updateProposal(
+                        "multiYearDiscountPercent",
+                        event.target.value,
+                      )
+                    }
+                    aria-label="Multi Year discount percentage"
+                  />
+                </label>
+              ) : null}
+            </div>
           </div>
         </section>
 
@@ -1939,6 +2111,31 @@ export function QuoteGenerator() {
               Add note
             </button>
           </div>
+          <div className="redlines-disclaimer-control">
+            <label className="redlines-disclaimer-toggle">
+              <input
+                type="checkbox"
+                checked={proposal.redlinesDisclaimerEnabled}
+                onChange={(event) =>
+                  updateProposal(
+                    "redlinesDisclaimerEnabled",
+                    event.target.checked,
+                  )
+                }
+              />
+              <span>Redline Disclaimer</span>
+            </label>
+            {proposal.redlinesDisclaimerEnabled ? (
+              <textarea
+                className="field redlines-disclaimer-field"
+                value={proposal.redlinesDisclaimerText}
+                onChange={(event) =>
+                  updateProposal("redlinesDisclaimerText", event.target.value)
+                }
+                aria-label="Redline Disclaimer note"
+              />
+            ) : null}
+          </div>
           <div className="note-editor">
             {proposal.additionalNotes.map((note, index) => (
               <div className="note-row" key={`note-${index}`}>
@@ -1999,6 +2196,8 @@ export function QuoteGenerator() {
           onPartyFieldChange={updateProposal}
           onPricingRowChange={updatePricingRow}
           onDocumentTextChange={updateDocumentText}
+          onAdditionalNoteChange={updateAdditionalNote}
+          onRemoveAdditionalNote={removeAdditionalNote}
           onDefaultDocumentNoteChange={updateDefaultDocumentNote}
           onAddDefaultDocumentNote={addDefaultDocumentNote}
           onRemoveDefaultDocumentNote={removeDefaultDocumentNote}
@@ -2052,6 +2251,8 @@ function QuoteDocument({
   onPartyFieldChange,
   onPricingRowChange,
   onDocumentTextChange,
+  onAdditionalNoteChange,
+  onRemoveAdditionalNote,
   onDefaultDocumentNoteChange,
   onAddDefaultDocumentNote,
   onRemoveDefaultDocumentNote,
@@ -2067,6 +2268,8 @@ function QuoteDocument({
     patch: Partial<PricingRow>,
   ) => void;
   onDocumentTextChange: DocumentTextChangeHandler;
+  onAdditionalNoteChange: (index: number, value: string) => void;
+  onRemoveAdditionalNote: (index: number) => void;
   onDefaultDocumentNoteChange: (index: number, value: string) => void;
   onAddDefaultDocumentNote: () => void;
   onRemoveDefaultDocumentNote: (index: number) => void;
@@ -2078,22 +2281,28 @@ function QuoteDocument({
     <div className="quote-output">
       <QuotePage
         proposal={proposal}
-        options={quoteTerms.map((term, index) => ({
-          optionLetter: String.fromCharCode(65 + index),
-          term,
-          totals: calculateOption(
-            pricingOption,
-            proposal.currency,
+        options={quoteTerms.map((term, index) => {
+          return {
+            optionLetter: String.fromCharCode(65 + index),
             term,
-            proposal.eligibilityDiscountType,
-            proposal.resellerDiscountType,
-            proposal.customDiscountPercent,
-          ),
-        }))}
+            totals: calculateOption(
+              pricingOption,
+              proposal.currency,
+              term,
+              proposal.eligibilityDiscountType,
+              proposal.resellerDiscountType,
+              proposal.multiYearDiscountEnabled,
+              proposal.multiYearDiscountPercent,
+              proposal.customDiscountPercent,
+            ),
+          };
+        })}
         pricingOptionId={pricingOption.id}
         onPartyFieldChange={onPartyFieldChange}
         onPricingRowChange={onPricingRowChange}
         onDocumentTextChange={onDocumentTextChange}
+        onAdditionalNoteChange={onAdditionalNoteChange}
+        onRemoveAdditionalNote={onRemoveAdditionalNote}
         onDefaultDocumentNoteChange={onDefaultDocumentNoteChange}
         onAddDefaultDocumentNote={onAddDefaultDocumentNote}
         onRemoveDefaultDocumentNote={onRemoveDefaultDocumentNote}
@@ -2109,6 +2318,8 @@ function QuotePage({
   onPartyFieldChange,
   onPricingRowChange,
   onDocumentTextChange,
+  onAdditionalNoteChange,
+  onRemoveAdditionalNote,
   onDefaultDocumentNoteChange,
   onAddDefaultDocumentNote,
   onRemoveDefaultDocumentNote,
@@ -2130,6 +2341,8 @@ function QuotePage({
     patch: Partial<PricingRow>,
   ) => void;
   onDocumentTextChange: DocumentTextChangeHandler;
+  onAdditionalNoteChange: (index: number, value: string) => void;
+  onRemoveAdditionalNote: (index: number) => void;
   onDefaultDocumentNoteChange: (index: number, value: string) => void;
   onAddDefaultDocumentNote: () => void;
   onRemoveDefaultDocumentNote: (index: number) => void;
@@ -2146,7 +2359,7 @@ function QuotePage({
         <div className="quote-logo">
           <Image
             className="quote-brand-mark"
-            src="/jotform-mark.svg"
+            src="/jotform-mark-hd.png"
             alt=""
             aria-hidden="true"
             width={350}
@@ -2299,8 +2512,18 @@ function QuotePage({
       ))}
       <QuoteNotes
         additionalNotes={proposal.additionalNotes}
+        redlinesDisclaimerEnabled={proposal.redlinesDisclaimerEnabled}
+        redlinesDisclaimerText={proposal.redlinesDisclaimerText}
         documentText={documentText}
         onDocumentTextChange={onDocumentTextChange}
+        onRedlinesDisclaimerTextChange={(value) =>
+          onPartyFieldChange("redlinesDisclaimerText", value)
+        }
+        onRemoveRedlinesDisclaimer={() =>
+          onPartyFieldChange("redlinesDisclaimerEnabled", false)
+        }
+        onAdditionalNoteChange={onAdditionalNoteChange}
+        onRemoveAdditionalNote={onRemoveAdditionalNote}
         onDefaultDocumentNoteChange={onDefaultDocumentNoteChange}
         onAddDefaultDocumentNote={onAddDefaultDocumentNote}
         onRemoveDefaultDocumentNote={onRemoveDefaultDocumentNote}
@@ -2385,27 +2608,13 @@ function QuotePartiesTable({
         <col className="quote-party-col-right" />
       </colgroup>
       <tbody>
-        <tr className="quote-party-heading-row">
-          <td>
+        <tr>
+          <td className="quote-party-cell">
             <QuotePartyHeading
               recipient={leftRecipient}
               onPartyFieldChange={onPartyFieldChange}
               onDocumentTextChange={onDocumentTextChange}
             />
-          </td>
-          <td />
-          <td>
-            {rightRecipient ? (
-              <QuotePartyHeading
-                recipient={rightRecipient}
-                onPartyFieldChange={onPartyFieldChange}
-                onDocumentTextChange={onDocumentTextChange}
-              />
-            ) : null}
-          </td>
-        </tr>
-        <tr>
-          <td>
             <QuotePartyFields
               recipient={leftRecipient}
               documentText={documentText}
@@ -2414,14 +2623,21 @@ function QuotePartiesTable({
             />
           </td>
           <td />
-          <td>
+          <td className="quote-party-cell">
             {rightRecipient ? (
-              <QuotePartyFields
-                recipient={rightRecipient}
-                documentText={documentText}
-                onPartyFieldChange={onPartyFieldChange}
-                onDocumentTextChange={onDocumentTextChange}
-              />
+              <>
+                <QuotePartyHeading
+                  recipient={rightRecipient}
+                  onPartyFieldChange={onPartyFieldChange}
+                  onDocumentTextChange={onDocumentTextChange}
+                />
+                <QuotePartyFields
+                  recipient={rightRecipient}
+                  documentText={documentText}
+                  onPartyFieldChange={onPartyFieldChange}
+                  onDocumentTextChange={onDocumentTextChange}
+                />
+              </>
             ) : null}
           </td>
         </tr>
@@ -2487,10 +2703,9 @@ function QuotePartyFields({
         <strong className="quote-party-label">
           <EditableText
             value={documentText.nameLabel}
-            placeholder="Name"
+            placeholder="Name:"
             onChange={(value) => onDocumentTextChange("nameLabel", value)}
           />
-          :
         </strong>
         <PlainEditableText
           value={recipient.name}
@@ -2504,10 +2719,9 @@ function QuotePartyFields({
           <strong className="quote-party-label">
             <EditableText
               value={documentText.addressLabel}
-              placeholder="Address"
+              placeholder="Address:"
               onChange={(value) => onDocumentTextChange("addressLabel", value)}
             />
-            :
           </strong>
           <PlainEditableText
             className="quote-address-edit"
@@ -2555,8 +2769,7 @@ function QuoteTable({
   onDocumentTextChange: DocumentTextChangeHandler;
 }) {
   const termDocumentLabel = quoteTermDocumentLabel(term);
-  const showResellerDiscountColumns =
-    recipientType === "reseller" && totals.resellerDiscountPercent > 0;
+  const showResellerDiscountColumns = recipientType === "reseller";
   const quoteLines =
     totals.eligibilityDiscountAmount > 0
       ? [
@@ -2658,7 +2871,6 @@ function QuoteTable({
                         onDocumentTextChange("discountedPriceHeader", value)
                       }
                     />
-                    <span>({totals.resellerDiscountPercent}%)</span>
                   </span>
                 </th>
               </>
@@ -2702,18 +2914,25 @@ function QuoteTable({
             <Fragment key={line.row.id}>
               <tr>
                 <td>
-                  <PlainEditableText
-                    value={
-                      line.row.displayName?.trim()
-                        ? line.row.displayName
-                        : quoteProductLabel(line.row.productName)
-                    }
-                    onChange={(value) =>
-                      onPricingRowChange(pricingOptionId, line.row.id, {
-                        displayName: value,
-                      })
-                    }
-                  />
+                  <div className="quote-product-cell">
+                    <PlainEditableText
+                      value={
+                        line.row.displayName?.trim()
+                          ? line.row.displayName
+                          : quoteProductLabel(line.row.productName)
+                      }
+                      onChange={(value) =>
+                        onPricingRowChange(pricingOptionId, line.row.id, {
+                          displayName: value,
+                        })
+                      }
+                    />
+                    {line.multiUserDiscountAmount > 0 ? (
+                      <small className="quote-product-discount-label">
+                        {formatPlainNumber(line.multiUserDiscountPercent)}% Discount
+                      </small>
+                    ) : null}
+                  </div>
                 </td>
                 <td>
                   <PlainEditableText
@@ -2737,7 +2956,7 @@ function QuoteTable({
                       {line.product?.category === "One-Time Fees" &&
                       line.row.waived
                         ? "Waived"
-                        : formatQuoteMoney(line.total, currency)}
+                        : formatQuoteMoney(line.listTotal, currency)}
                     </td>
                     <td>
                       {line.product?.category === "One-Time Fees" &&
@@ -2828,6 +3047,28 @@ function QuoteTable({
               ) : null}
             </Fragment>
           ))}
+          {totals.multiYearDiscountEnabled ? (
+            <tr className="quote-line-discount-row">
+              <td>
+                Multi Year Discount - {totals.multiYearDiscountPercent}%
+              </td>
+              <td />
+              {showResellerDiscountColumns ? (
+                <>
+                  <td>{formatPlainNumber(term.months)}</td>
+                  <td />
+                </>
+              ) : (
+                <>
+                  <td />
+                  <td>{formatPlainNumber(term.months)}</td>
+                </>
+              )}
+              <td>
+                -{formatQuoteMoney(totals.multiYearDiscountAmount, currency)}
+              </td>
+            </tr>
+          ) : null}
           {totals.customDiscountAmount > 0 ? (
             <tr>
               <td>
@@ -2871,7 +3112,7 @@ function QuoteTable({
                   }
                 />
               </td>
-              <td>{term.discountPercent}%</td>
+              <td>{totals.termDiscountPercent}%</td>
               {showResellerDiscountColumns ? (
                 <>
                   <td>{formatPlainNumber(term.months)}</td>
@@ -2898,7 +3139,7 @@ function QuoteTable({
             {showResellerDiscountColumns ? (
               <>
                 <td />
-                <td>{formatQuoteMoney(totals.subtotalBeforeDiscounts, currency)}</td>
+                <td>{formatQuoteMoney(totals.listPriceSubtotal, currency)}</td>
               </>
             ) : (
               <>
@@ -2916,23 +3157,31 @@ function QuoteTable({
 
 function QuoteNotes({
   additionalNotes,
+  redlinesDisclaimerEnabled,
+  redlinesDisclaimerText,
   documentText,
   onDocumentTextChange,
+  onRedlinesDisclaimerTextChange,
+  onRemoveRedlinesDisclaimer,
+  onAdditionalNoteChange,
+  onRemoveAdditionalNote,
   onDefaultDocumentNoteChange,
   onAddDefaultDocumentNote,
   onRemoveDefaultDocumentNote,
 }: {
   additionalNotes: string[];
+  redlinesDisclaimerEnabled: boolean;
+  redlinesDisclaimerText: string;
   documentText: DocumentText;
   onDocumentTextChange: DocumentTextChangeHandler;
+  onRedlinesDisclaimerTextChange: (value: string) => void;
+  onRemoveRedlinesDisclaimer: () => void;
+  onAdditionalNoteChange: (index: number, value: string) => void;
+  onRemoveAdditionalNote: (index: number) => void;
   onDefaultDocumentNoteChange: (index: number, value: string) => void;
   onAddDefaultDocumentNote: () => void;
   onRemoveDefaultDocumentNote: (index: number) => void;
 }) {
-  const visibleAdditionalNotes = additionalNotes.filter(
-    (note) => note.trim().length > 0,
-  );
-
   return (
     <section className="quote-notes">
       <h2>
@@ -2944,8 +3193,9 @@ function QuoteNotes({
       </h2>
       <ol>
         {documentText.defaultNotes.map((note, index) => (
-          <li key={`default-note-${index}`}>
+          <li className="quote-note-edit-row" key={`default-note-${index}`}>
             <EditableText
+              className="quote-note-editable"
               value={note}
               placeholder={`Note ${index + 1}`}
               multiline
@@ -2961,8 +3211,43 @@ function QuoteNotes({
             </button>
           </li>
         ))}
-        {visibleAdditionalNotes.map((note) => (
-          <li key={note}>{note}</li>
+        {redlinesDisclaimerEnabled ? (
+          <li className="quote-additional-note quote-redlines-disclaimer">
+            <EditableText
+              className="quote-note-editable"
+              value={redlinesDisclaimerText}
+              placeholder="Redline Disclaimer"
+              multiline
+              onChange={onRedlinesDisclaimerTextChange}
+            />
+            <button
+              className="quote-inline-button no-print"
+              onClick={onRemoveRedlinesDisclaimer}
+              aria-label="Remove Redline Disclaimer"
+              title="Remove Redline Disclaimer"
+            >
+              -
+            </button>
+          </li>
+        ) : null}
+        {additionalNotes.map((note, index) => (
+          <li className="quote-additional-note" key={`additional-note-${index}`}>
+            <EditableText
+              className="quote-note-editable"
+              value={note}
+              placeholder="Click to write note"
+              multiline
+              onChange={(value) => onAdditionalNoteChange(index, value)}
+            />
+            <button
+              className="quote-inline-button no-print"
+              onClick={() => onRemoveAdditionalNote(index)}
+              aria-label="Remove note"
+              title="Remove note"
+            >
+              -
+            </button>
+          </li>
         ))}
       </ol>
       <button

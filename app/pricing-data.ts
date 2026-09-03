@@ -50,6 +50,12 @@ export const productPrices: ProductPrice[] = [
     prices: { USD: 4740, CAD: 7100, GBP: 3600, EUR: 4200, AUD: 7300 },
   },
   {
+    product: "Additional 5 User Bundle - Discounted",
+    category: "Add-Ons",
+    annual: true,
+    prices: { USD: 4740, CAD: 7100, GBP: 3600, EUR: 4200, AUD: 7300 },
+  },
+  {
     product: "Salesforce AppExchange Package",
     category: "Add-Ons",
     annual: true,

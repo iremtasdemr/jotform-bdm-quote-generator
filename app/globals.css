@@ -449,6 +449,46 @@ button {
   min-width: 0;
 }
 
+.row-reseller-discount-control {
+  display: flex;
+  align-items: center;
+  gap: 0.38rem;
+  min-height: 1.45rem;
+  color: #34413d;
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.row-reseller-discount-control input {
+  flex: 0 0 auto;
+  width: 0.95rem;
+  height: 0.95rem;
+  min-height: auto;
+  accent-color: var(--brand);
+}
+
+.reseller-discount-help {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.bundle-discount-control {
+  display: grid;
+  gap: 0.28rem;
+  color: #34413d;
+  font-size: 0.7rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.bundle-discount-control input {
+  width: 100%;
+}
+
 .custom-product-name-field {
   min-width: 0;
 }
@@ -718,8 +758,66 @@ button {
   grid-column: 1 / -1;
 }
 
+.multi-year-discount-control {
+  display: grid;
+  gap: 0.65rem;
+  border: 1px solid #dfe5ef;
+  border-radius: 6px;
+  background: #f8fafc;
+  padding: 0.72rem;
+}
+
+.multi-year-discount-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #3c4557;
+  font-size: 0.82rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.multi-year-discount-toggle input {
+  width: 1rem;
+  height: 1rem;
+  min-height: auto;
+  accent-color: var(--brand);
+}
+
 .note-row {
   grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.redlines-disclaimer-control {
+  display: grid;
+  gap: 0.55rem;
+  border: 1px solid #dfe5ef;
+  border-radius: 6px;
+  background: #f8fafc;
+  padding: 0.72rem;
+}
+
+.redlines-disclaimer-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #2e3935;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.redlines-disclaimer-toggle input {
+  flex: 0 0 auto;
+  width: 1rem;
+  height: 1rem;
+  min-height: auto;
+  accent-color: var(--brand);
+}
+
+.redlines-disclaimer-field {
+  min-height: 5.25rem;
+  resize: vertical;
 }
 
 .preview-shell {
@@ -872,8 +970,14 @@ button {
   width: 0.43in;
   height: 0.43in;
   object-fit: contain;
+  border: 0;
+  outline: 0;
   print-color-adjust: exact;
   -webkit-print-color-adjust: exact;
+}
+
+.pdf-exporting [contenteditable] {
+  caret-color: transparent !important;
 }
 
 .quote-info-table {
@@ -986,7 +1090,10 @@ button {
 }
 
 .quote-party-table h2 {
-  margin: 0;
+  margin: 0 0 0.02in;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   font-size: 0.833rem;
   font-weight: 800;
   line-height: 1.2;
@@ -1001,16 +1108,8 @@ button {
   min-height: 0.19in;
 }
 
-.quote-party-heading-row {
-  height: 0.24in;
-}
-
-.quote-party-heading-row td {
-  padding-bottom: 0.01in;
-}
-
-.quote-party-heading-row + tr td {
-  padding-top: 0.01in;
+.quote-party-cell {
+  min-width: 0;
 }
 
 .quote-placeholder {
@@ -1062,7 +1161,16 @@ button {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: start;
+  min-width: 0;
   column-gap: 0.04in;
+}
+
+.quote-party-row > span {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+  word-break: break-word;
 }
 
 .quote-party-label {
@@ -1197,6 +1305,25 @@ button {
   white-space: nowrap;
 }
 
+.quote-product-cell {
+  display: grid;
+  gap: 0.02in;
+}
+
+.quote-product-discount-label {
+  display: flex;
+  align-items: baseline;
+  gap: 0.02rem;
+  color: #555555;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.quote-product-discount-label .quote-editable-text {
+  min-width: 0.8rem;
+}
+
 .quote-table th:nth-child(3),
 .quote-table th:last-child {
   padding-right: 0.065in;
@@ -1244,6 +1371,7 @@ button {
 
 .quote-notes li {
   position: relative;
+  min-height: 0.28in;
   counter-increment: quote-note;
   padding-left: 0.42in;
 }
@@ -1252,6 +1380,36 @@ button {
   position: absolute;
   left: 0;
   content: counter(quote-note) ")";
+}
+
+.quote-note-edit-row,
+.quote-additional-note {
+  display: flex;
+  align-items: flex-start;
+}
+
+.quote-note-editable {
+  display: block;
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+  min-height: 0.28in;
+  margin: -0.02in 0;
+  padding: 0.02in 0;
+  border: 1px dashed transparent;
+  line-height: 1.25;
+  vertical-align: top;
+}
+
+.quote-note-editable:hover,
+.quote-note-editable:focus {
+  border-color: #aeb8cd;
+  background: #f7f8fc;
+}
+
+.quote-note-edit-row .quote-inline-button {
+  flex: 0 0 auto;
+  margin-top: 0;
 }
 
 .proposal-output {
