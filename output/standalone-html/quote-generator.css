@@ -202,6 +202,8 @@ input[readonly] { background: #f7f8fb; color: #667085; }
 .quote-table th { font-size: .84rem; font-weight: 800; text-align: center; }
 .quote-discounted-price-header { display: inline-flex; flex-wrap: wrap; justify-content: center; gap: 0 .16rem; }
 .quote-product-cell { display: grid; gap: .02in; }
+.quote-bundle-quantity { display: inline-block; max-width: 1.25in; white-space: normal; line-height: 1.08; text-align: center; }
+.quote-bundle-quantity .quote-plain-editable-text { display: inline; min-width: 0; }
 .quote-inline-discount-price { display: inline-grid; justify-items: end; gap: .01in; line-height: 1.08; }
 .quote-inline-discount-price s { color: #707782; text-decoration-thickness: 1px; }
 .quote-inline-discount-price strong { color: #000; font-weight: 800; }

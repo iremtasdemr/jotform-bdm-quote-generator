@@ -778,29 +778,11 @@ function fiveUserBundleDiscountPercent(
   return eligibilityDiscountPercent > 0 ? 15 : 30;
 }
 
-function fiveUserBundlePdfUnitPrice(line: CalculatedLine) {
-  return (
-    line.unitPrice *
-    (1 - fiveUserBundleStandardDiscountPercent / 100)
-  );
-}
-
 function fiveUserBundlePdfTotal(line: CalculatedLine) {
   return (
     line.listTotal *
     (1 - fiveUserBundleStandardDiscountPercent / 100)
   );
-}
-
-function normalizedFiveUserBundlePdfPriceInput(value: string) {
-  const displayedPrice = normalizedMoneyInput(value);
-
-  return displayedPrice
-    ? String(
-        positiveNumber(displayedPrice) /
-          (1 - fiveUserBundleStandardDiscountPercent / 100),
-      )
-    : "";
 }
 
 function quoteProductLabel(productName: string) {
@@ -2969,15 +2951,33 @@ function QuoteTable({
                   </div>
                 </td>
                 <td>
-                  <PlainEditableText
-                    value={line.row.quantity}
-                    commitOnInput
-                    onChange={(value) =>
-                      onPricingRowChange(pricingOptionId, line.row.id, {
-                        quantity: value,
-                      })
-                    }
-                  />
+                  {isFiveUserBundleProductName(line.row.productName) ? (
+                    <span className="quote-bundle-quantity">
+                      <PlainEditableText
+                        value={line.row.quantity}
+                        commitOnInput
+                        onChange={(value) =>
+                          onPricingRowChange(pricingOptionId, line.row.id, {
+                            quantity: value,
+                          })
+                        }
+                      />{" "}
+                      {positiveNumber(line.row.quantity) === 1
+                        ? "Bundle"
+                        : "Bundles"}{" "}
+                      of 5 users
+                    </span>
+                  ) : (
+                    <PlainEditableText
+                      value={line.row.quantity}
+                      commitOnInput
+                      onChange={(value) =>
+                        onPricingRowChange(pricingOptionId, line.row.id, {
+                          quantity: value,
+                        })
+                      }
+                    />
+                  )}
                 </td>
                 {showResellerDiscountColumns ? (
                   <>
@@ -3025,33 +3025,26 @@ function QuoteTable({
                 ) : (
                   <>
                     <td>
-                      <PlainEditableText
-                        value={
-                          isCustomPriceProduct(line.product) &&
-                          !line.row.unitPriceOverride?.trim()
-                            ? ""
-                            : formatAnnualMoney(
-                                isFiveUserBundleProductName(
-                                  line.row.productName,
-                                )
-                                  ? fiveUserBundlePdfUnitPrice(line)
-                                  : line.unitPrice,
-                                currency,
-                              )
-                        }
-                        placeholder={
-                          isCustomPriceProduct(line.product) ? "Enter amount" : ""
-                        }
-                        onChange={(value) =>
-                          onPricingRowChange(pricingOptionId, line.row.id, {
-                            unitPriceOverride: isFiveUserBundleProductName(
-                              line.row.productName,
-                            )
-                              ? normalizedFiveUserBundlePdfPriceInput(value)
-                              : normalizedMoneyInput(value),
-                          })
-                        }
-                      />
+                      {isFiveUserBundleProductName(line.row.productName) ? null : (
+                        <PlainEditableText
+                          value={
+                            isCustomPriceProduct(line.product) &&
+                            !line.row.unitPriceOverride?.trim()
+                              ? ""
+                              : formatAnnualMoney(line.unitPrice, currency)
+                          }
+                          placeholder={
+                            isCustomPriceProduct(line.product)
+                              ? "Enter amount"
+                              : ""
+                          }
+                          onChange={(value) =>
+                            onPricingRowChange(pricingOptionId, line.row.id, {
+                              unitPriceOverride: normalizedMoneyInput(value),
+                            })
+                          }
+                        />
+                      )}
                     </td>
                     <td>
                       {line.product?.annual === false
@@ -3062,29 +3055,27 @@ function QuoteTable({
                       {line.product?.category === "One-Time Fees" &&
                       line.row.waived
                         ? "Waived"
-                        : isFiveUserBundleProductName(line.row.productName) &&
-                            line.eligibilityDiscountAmount > 0 ? (
+                        : isFiveUserBundleProductName(line.row.productName) ? (
                           <span className="quote-inline-discount-price">
                             <s>
                               {formatQuoteMoney(
-                                fiveUserBundlePdfTotal(line),
+                                line.eligibilityDiscountAmount > 0
+                                  ? fiveUserBundlePdfTotal(line)
+                                  : line.listTotal,
                                 currency,
                               )}
                             </s>
                             <strong>
                               {formatQuoteMoney(
-                                line.total - line.eligibilityDiscountAmount,
+                                line.eligibilityDiscountAmount > 0
+                                  ? line.total - line.eligibilityDiscountAmount
+                                  : fiveUserBundlePdfTotal(line),
                                 currency,
                               )}
                             </strong>
                           </span>
                         ) : (
-                          formatQuoteMoney(
-                            isFiveUserBundleProductName(line.row.productName)
-                              ? fiveUserBundlePdfTotal(line)
-                              : line.total,
-                            currency,
-                          )
+                          formatQuoteMoney(line.total, currency)
                         )}
                     </td>
                   </>

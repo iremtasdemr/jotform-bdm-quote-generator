@@ -293,21 +293,23 @@ function optionTable(term, index, totalOptions) {
       : line.product.name.replace(/\(includes ([35]) users\)/g, "(includes $1 Users)");
     const productName = editable(line.row.displayName || pdfProductName, `data-row-id="${line.row.id}" data-row-field="displayName"`, "quote-plain-editable-text");
     const productNameCell = `<div class="quote-product-cell">${productName}</div>`;
-    const quantity = editable(line.row.quantity, `data-row-id="${line.row.id}" data-row-field="quantity"`, "quote-plain-editable-text");
+    const editableQuantity = editable(line.row.quantity, `data-row-id="${line.row.id}" data-row-field="quantity"`, "quote-plain-editable-text");
+    const quantity = isFiveUserBundle(line.product.name)
+      ? `<span class="quote-bundle-quantity">${editableQuantity} ${line.quantity === 1 ? "Bundle" : "Bundles"} of 5 users</span>`
+      : editableQuantity;
     const resellerDiscountedTotal = line.row.resellerDiscountEligible !== false
       ? line.total * (1 - totals.resellerPercent / 100)
       : line.total;
-    const bundlePdfUnit = line.unit * (1 - fiveUserBundleStandardDiscountPercent / 100);
     const bundlePdfTotal = line.listTotal * (1 - fiveUserBundleStandardDiscountPercent / 100);
-    const inlineEligibilityPrice = isFiveUserBundle(line.product.name) && line.eligibilityDiscount > 0
-      ? `<span class="quote-inline-discount-price"><s>${money(bundlePdfTotal)}</s><strong>${money(line.total - line.eligibilityDiscount)}</strong></span>`
-      : money(isFiveUserBundle(line.product.name) ? bundlePdfTotal : line.total);
+    const bundlePriceDisplay = isFiveUserBundle(line.product.name)
+      ? `<span class="quote-inline-discount-price"><s>${money(line.eligibilityDiscount > 0 ? bundlePdfTotal : line.listTotal)}</s><strong>${money(line.eligibilityDiscount > 0 ? line.total - line.eligibilityDiscount : bundlePdfTotal)}</strong></span>`
+      : money(line.total);
     const resellerPrice = isFiveUserBundle(line.product.name) && line.eligibilityDiscount > 0
       ? `<span class="quote-inline-discount-price"><s>${money(bundlePdfTotal)}</s><strong>${money(resellerDiscountedTotal - line.eligibilityDiscount)}</strong></span>`
       : money(resellerDiscountedTotal);
     const productRow = showResellerDiscountColumns
       ? `<tr><td>${productNameCell}</td><td>${quantity}</td><td>${line.annual ? term.months : "-"}</td><td>${line.row.waived ? "Waived" : money(line.listTotal)}</td><td>${line.row.waived ? "Waived" : resellerPrice}</td></tr>`
-      : `<tr><td>${productNameCell}</td><td>${quantity}</td><td>${editable(money(isFiveUserBundle(line.product.name) ? bundlePdfUnit : line.unit), `data-row-id="${line.row.id}" data-row-field="unitOverride" ${isFiveUserBundle(line.product.name) ? 'data-bundle-pdf-price="true"' : ""}`, "quote-plain-editable-text")}</td><td>${line.annual ? term.months : "One-time"}</td><td>${line.row.waived ? "Waived" : inlineEligibilityPrice}</td></tr>`;
+      : `<tr><td>${productNameCell}</td><td>${quantity}</td><td>${isFiveUserBundle(line.product.name) ? "" : editable(money(line.unit), `data-row-id="${line.row.id}" data-row-field="unitOverride"`, "quote-plain-editable-text")}</td><td>${line.annual ? term.months : "One-time"}</td><td>${line.row.waived ? "Waived" : bundlePriceDisplay}</td></tr>`;
     const eligibilityRow = separateEligibility > 0 && lastEligibilityLine?.row.id === line.row.id
       ? `<tr class="quote-line-discount-row"><td>${eligibilityLabel} - ${totals.eligibilityPercent}%</td><td></td>${showResellerDiscountColumns ? `<td>${term.months}</td><td></td>` : `<td></td><td>${term.months}</td>`}<td>−${money(separateEligibility)}</td></tr>`
       : "";
@@ -369,9 +371,7 @@ function renderQuote() {
     const field = element.dataset.rowField;
     const rawValue = element.innerText.replace(/\n+$/g, "");
     row[field] = field === "unitOverride"
-      ? (rawValue.trim()
-          ? String(number(rawValue) / (element.dataset.bundlePdfPrice === "true" ? (1 - fiveUserBundleStandardDiscountPercent / 100) : 1))
-          : "")
+      ? rawValue.replace(/[^0-9.-]/g, "")
       : field === "multiUserDiscountPercent"
         ? (rawValue.trim() ? String(Math.min(100, number(rawValue))) : "")
         : rawValue;
