@@ -523,19 +523,6 @@ function normalizeSalespersonName(name: string) {
   return legacySalespersonNameMap.get(name) || name;
 }
 
-function formatUsAddress(address: string) {
-  const normalized = address.replace(/\r\n?/g, "\n").trim();
-  if (!normalized) return "";
-
-  const match = normalized.match(
-    /^([\s\S]*?)(?:,\s*|\n+)([^,\n]+),\s*([A-Za-z]{2})\s+(\d{5}(?:-\d{4})?)$/,
-  );
-  if (!match) return normalized;
-
-  const [, streetAddress, city, state, zipCode] = match;
-  return `${streetAddress.trim()}\n${city.trim()}, ${state.toUpperCase()} ${zipCode}`;
-}
-
 function setBrowserTitle(title: string) {
   document.title = title;
 }
@@ -2743,7 +2730,7 @@ function QuotePartyFields({
           </strong>
           <PlainEditableText
             className="quote-address-edit"
-            value={formatUsAddress(recipient.address)}
+            value={recipient.address}
             multiline
             onChange={(value) =>
               onPartyFieldChange(recipient.addressField, value)

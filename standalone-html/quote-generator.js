@@ -254,20 +254,11 @@ function renderNotesEditor() {
   $$('[data-remove-note]').forEach((button) => button.addEventListener("click", () => { state.notes.splice(Number(button.dataset.removeNote), 1); renderNotesEditor(); renderQuote(); }));
 }
 
-function formatUsAddress(address) {
-  const normalized = String(address || "").replace(/\r\n?/g, "\n").trim();
-  if (!normalized) return "";
-  const match = normalized.match(/^([\s\S]*?)(?:,\s*|\n+)([^,\n]+),\s*([A-Za-z]{2})\s+(\d{5}(?:-\d{4})?)$/);
-  if (!match) return normalized;
-  const [, streetAddress, city, state, zipCode] = match;
-  return `${streetAddress.trim()}\n${city.trim()}, ${state.toUpperCase()} ${zipCode}`;
-}
-
 function partyData({ headingKey, nameField, companyField, addressField }) {
   const company = companyField ? state[companyField] : "";
   return {
     heading: `<h2>${editable(state.text[headingKey], `data-text-key="${headingKey}"`)}${company ? ` ${editable(company, `data-state-field="${companyField}"`)}` : ""}</h2>`,
-    fields: `<p class="quote-party-row"><strong class="quote-party-label">${editable(state.text.nameLabel, 'data-text-key="nameLabel"')}</strong>${editable(state[nameField] || "", `data-state-field="${nameField}"`, "quote-plain-editable-text")}</p>${state[addressField] ? `<p class="quote-party-row"><strong class="quote-party-label">${editable(state.text.addressLabel, 'data-text-key="addressLabel"')}</strong>${editable(formatUsAddress(state[addressField]), `data-state-field="${addressField}"`, "quote-plain-editable-text quote-address")}</p>` : ""}`
+    fields: `<p class="quote-party-row"><strong class="quote-party-label">${editable(state.text.nameLabel, 'data-text-key="nameLabel"')}</strong>${editable(state[nameField] || "", `data-state-field="${nameField}"`, "quote-plain-editable-text")}</p>${state[addressField] ? `<p class="quote-party-row"><strong class="quote-party-label">${editable(state.text.addressLabel, 'data-text-key="addressLabel"')}</strong>${editable(state[addressField], `data-state-field="${addressField}"`, "quote-plain-editable-text quote-address")}</p>` : ""}`
   };
 }
 
