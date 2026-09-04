@@ -1310,18 +1310,21 @@ button {
   gap: 0.02in;
 }
 
-.quote-product-discount-label {
-  display: flex;
-  align-items: baseline;
-  gap: 0.02rem;
-  color: #555555;
-  font-size: 0.68rem;
-  font-weight: 700;
-  line-height: 1.15;
+.quote-inline-discount-price {
+  display: inline-grid;
+  justify-items: end;
+  gap: 0.01in;
+  line-height: 1.08;
 }
 
-.quote-product-discount-label .quote-editable-text {
-  min-width: 0.8rem;
+.quote-inline-discount-price s {
+  color: #707782;
+  text-decoration-thickness: 1px;
+}
+
+.quote-inline-discount-price strong {
+  color: #000000;
+  font-weight: 800;
 }
 
 .quote-table th:nth-child(3),
