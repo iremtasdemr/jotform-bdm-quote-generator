@@ -129,6 +129,7 @@ type ProposalData = {
   preparedByName: string;
   salespersonEmail: string;
   jotformEntityName: string;
+  sellerAddressSingleLine: boolean;
   quoteNumber: string;
   proposalDate: string;
   currency: CurrencyCode;
@@ -441,6 +442,7 @@ const emptyProposal: ProposalData = {
   preparedByName: "",
   salespersonEmail: "",
   jotformEntityName: "Jotform US",
+  sellerAddressSingleLine: false,
   quoteNumber: "",
   proposalDate: todayQuoteDate(),
   currency: "USD",
@@ -546,6 +548,7 @@ function currentProposal(source: ProposalData): ProposalData {
     preparedByName,
     salespersonEmail: source.salespersonEmail || salesperson?.email || "",
     jotformEntityName: source.jotformEntityName || jotformEntityOptions[0].name,
+    sellerAddressSingleLine: source.sellerAddressSingleLine === true,
     quoteNumber:
       source.quoteNumber || quoteNumberForSalesperson(preparedByName) || "",
     eligibilityDiscountType: normalizeEligibilityDiscountType(
@@ -1566,9 +1569,6 @@ export function QuoteGenerator() {
                       updateProposal("customerAddress", event.target.value)
                     }
                   />
-                  <small className="address-resize-help">
-                    Drag the corner to use one or more lines.
-                  </small>
                 </label>
               </>
             ) : (
@@ -1592,9 +1592,6 @@ export function QuoteGenerator() {
                       updateProposal("resellerAddress", event.target.value)
                     }
                   />
-                  <small className="address-resize-help">
-                    Drag the corner to use one or more lines.
-                  </small>
                 </label>
                 <label className="field-label">
                   Contact name
@@ -1625,9 +1622,6 @@ export function QuoteGenerator() {
                       updateProposal("customerAddress", event.target.value)
                     }
                   />
-                  <small className="address-resize-help">
-                    Drag the corner to use one or more lines.
-                  </small>
                 </label>
               </>
             )}
@@ -1660,6 +1654,19 @@ export function QuoteGenerator() {
                   </option>
                 ))}
               </select>
+            </label>
+            <label className="address-layout-control">
+              <input
+                type="checkbox"
+                checked={proposal.sellerAddressSingleLine}
+                onChange={(event) =>
+                  updateProposal(
+                    "sellerAddressSingleLine",
+                    event.target.checked,
+                  )
+                }
+              />
+              <span>Show Jotform address on one line in PDF</span>
             </label>
           </div>
         </section>
@@ -2458,7 +2465,14 @@ function QuotePage({
             <td />
           </tr>
           <tr className="quote-info-seller-row">
-            <td className="quote-company-block">
+            <td
+              className={`quote-company-block ${
+                proposal.sellerAddressSingleLine
+                  ? "quote-company-block-single-line"
+                  : ""
+              }`}
+              colSpan={proposal.sellerAddressSingleLine ? 4 : undefined}
+            >
               <p>
                 <EditableText
                   value={documentText.sellerName}
@@ -2468,7 +2482,11 @@ function QuotePage({
               </p>
               <p>
                 <EditableText
-                  className="quote-address-edit"
+                  className={`quote-address-edit ${
+                    proposal.sellerAddressSingleLine
+                      ? "quote-address-single-line"
+                      : ""
+                  }`}
                   value={documentText.sellerAddress}
                   placeholder="Seller address"
                   multiline
@@ -2478,9 +2496,13 @@ function QuotePage({
                 />
               </p>
             </td>
-            <td />
-            <td />
-            <td />
+            {proposal.sellerAddressSingleLine ? null : (
+              <>
+                <td />
+                <td />
+                <td />
+              </>
+            )}
           </tr>
           <tr className="quote-info-tax-row">
             <td className="quote-tax-id">
