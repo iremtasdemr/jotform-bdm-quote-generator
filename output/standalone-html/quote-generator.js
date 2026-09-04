@@ -106,7 +106,7 @@ function quoteNumber(name) {
 function freshState() {
   return {
     recipientType: "customer", proposalDate: quoteDate(), customerName: "", customerCompany: "", customerAddress: "",
-    resellerName: "", resellerAddress: "", preparedBy: "", salespersonEmail: "", quoteNumber: "", entity: "Jotform US", sellerAddressSingleLine: false, currency: "USD",
+    resellerName: "", resellerAddress: "", preparedBy: "", salespersonEmail: "", quoteNumber: "", entity: "Jotform US", currency: "USD",
     eligibilityDiscount: "0", resellerDiscount: "0", customTermLabel: "", customTermMonths: "", customTermDiscount: "",
     selectedTerms: ["1"], multiYearDiscountEnabled: false, multiYearDiscountPercent: "", text: { ...defaultDocumentText }, defaultNotes: [...defaultNotes], notes: [], redlinesDisclaimerEnabled: false, redlinesDisclaimerText: redlinesDisclaimerDefault, rows: [{ id: 1, product: products[0].name, displayName: "", quantity: "1", unitOverride: "", waived: false, resellerDiscountEligible: true, multiUserDiscountPercent: "" }]
   };
@@ -338,9 +338,6 @@ function renderQuote() {
   const entity = entities.find((item) => item.name === state.entity) || entities[0];
   const salesperson = salespeople.find((item) => item.name === state.preparedBy);
   const termObjects = selectedTermObjects();
-  const sellerAddressCells = state.sellerAddressSingleLine
-    ? `<td class="quote-company-block" colspan="4"><p><strong>${editable(state.text.sellerName, 'data-text-key="sellerName"')}</strong></p><p>${editable(state.text.sellerAddress, 'data-text-key="sellerAddress"', "quote-address quote-address-single-line")}</p></td>`
-    : `<td class="quote-company-block"><p><strong>${editable(state.text.sellerName, 'data-text-key="sellerName"')}</strong></p><p>${editable(state.text.sellerAddress, 'data-text-key="sellerAddress"', "quote-address")}</p></td><td></td><td></td><td></td>`;
   $("#quotePaper").innerHTML = `
     <header class="quote-logo-row"><div class="quote-logo"><img class="quote-brand-mark" src="assets/jotform-mark-hd.png" alt=""/>${editable(state.text.brandName, 'data-text-key="brandName"')}</div></header>
     <table class="quote-info-table" aria-label="Quote details">
@@ -348,7 +345,7 @@ function renderQuote() {
       <tbody>
         <tr class="quote-info-top-row"><td></td><td></td><td class="quote-date"><p>${editable(state.text.dateLabel, 'data-text-key="dateLabel"')}</p><p><strong>${escapeHtml(state.proposalDate)}</strong></p></td><td class="quote-meta"><p class="quote-title-line">${editable(state.text.quoteTitle, 'data-text-key="quoteTitle"')}</p><p>${editable(state.quoteNumber || quoteNumber(state.preparedBy), 'data-state-field="quoteNumber"', "quote-plain-editable-text")}</p><p>${editable(state.preparedBy, 'data-state-field="preparedBy"', "quote-plain-editable-text")}</p><p>${editable(salesperson?.email || state.salespersonEmail, 'data-state-field="salespersonEmail"', "quote-plain-editable-text")}</p></td></tr>
         <tr class="quote-info-blank-row"><td></td><td></td><td></td><td></td></tr>
-        <tr class="quote-info-seller-row">${sellerAddressCells}</tr>
+        <tr class="quote-info-seller-row"><td class="quote-company-block" colspan="4"><p><strong>${editable(state.text.sellerName, 'data-text-key="sellerName"')}</strong></p><p>${editable(state.text.sellerAddress, 'data-text-key="sellerAddress"', "quote-address")}</p></td></tr>
         <tr class="quote-info-tax-row"><td class="quote-tax-id">${editable(state.text.taxIdLabel, 'data-text-key="taxIdLabel"')}: ${editable(state.text.taxId, 'data-text-key="taxId"')}</td><td></td><td></td><td></td></tr>
       </tbody>
     </table>
@@ -442,7 +439,6 @@ function syncControls() {
   $("#redlinesDisclaimer").checked = state.redlinesDisclaimerEnabled;
   $("#redlinesDisclaimerText").value = state.redlinesDisclaimerText;
   $("#redlinesDisclaimerText").hidden = !state.redlinesDisclaimerEnabled;
-  $("#sellerAddressSingleLine").checked = state.sellerAddressSingleLine;
   updateRecipientVisibility();
 }
 
@@ -487,11 +483,6 @@ function bindControls() {
   $("#multiYearDiscountPercent").addEventListener("input", (event) => {
     state.multiYearDiscountPercent = event.target.value;
     renderSummaryAndQuote();
-  });
-
-  $("#sellerAddressSingleLine").addEventListener("change", (event) => {
-    state.sellerAddressSingleLine = event.target.checked;
-    renderQuote();
   });
 
   $("#redlinesDisclaimer").addEventListener("change", (event) => {

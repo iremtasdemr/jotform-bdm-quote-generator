@@ -283,25 +283,6 @@ button {
   resize: vertical;
 }
 
-.address-layout-control {
-  display: flex;
-  grid-column: 1 / -1;
-  align-items: center;
-  gap: 0.5rem;
-  color: #3c4557;
-  cursor: pointer;
-  font-size: 0.78rem;
-  font-weight: 750;
-}
-
-.address-layout-control input {
-  flex: 0 0 auto;
-  width: 1rem;
-  height: 1rem;
-  min-height: auto;
-  accent-color: var(--brand);
-}
-
 .field:focus {
   border-color: var(--brand);
   box-shadow: 0 0 0 3px rgba(7, 15, 79, 0.12);
@@ -1164,12 +1145,6 @@ button {
   min-width: 0;
   width: 100%;
   white-space: pre-line;
-}
-
-.quote-address-single-line {
-  overflow-wrap: normal;
-  white-space: nowrap;
-  word-break: normal;
 }
 
 .quote-plain-editable-text {
