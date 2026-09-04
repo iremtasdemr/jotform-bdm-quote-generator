@@ -1566,6 +1566,9 @@ export function QuoteGenerator() {
                       updateProposal("customerAddress", event.target.value)
                     }
                   />
+                  <small className="address-resize-help">
+                    Drag the corner to use one or more lines.
+                  </small>
                 </label>
               </>
             ) : (
@@ -1589,6 +1592,9 @@ export function QuoteGenerator() {
                       updateProposal("resellerAddress", event.target.value)
                     }
                   />
+                  <small className="address-resize-help">
+                    Drag the corner to use one or more lines.
+                  </small>
                 </label>
                 <label className="field-label">
                   Contact name
@@ -1619,6 +1625,9 @@ export function QuoteGenerator() {
                       updateProposal("customerAddress", event.target.value)
                     }
                   />
+                  <small className="address-resize-help">
+                    Drag the corner to use one or more lines.
+                  </small>
                 </label>
               </>
             )}
