@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Create customer-ready Jotform Enterprise quote PDFs." />
+    <title>Jotform Enterprise Quote Generator</title>
+    <link rel="icon" href="assets/jotform-mark.svg" type="image/svg+xml" />
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+    <link rel="stylesheet" href="quote-generator.css?v=20260904-bundle-price-display" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <aside class="editor no-print">
+        <header class="editor-header">
+          <img class="enterprise-logo" src="assets/jotform-enterprise-wordmark-hd.png" alt="Jotform Enterprise" />
+          <h1>Quote Generator</h1>
+        </header>
+
+        <section class="editor-section">
+          <h2>Quote Details</h2>
+          <div class="form-grid">
+            <label>Recipient type
+              <select id="recipientType">
+                <option value="customer">Customer</option>
+                <option value="reseller">Reseller</option>
+              </select>
+            </label>
+            <label>Quote date<input id="proposalDate" readonly /></label>
+            <div class="reseller-only form-grid-subset">
+              <label>Reseller name<input id="resellerName" /></label>
+              <label class="wide">Reseller address<textarea id="resellerAddress"></textarea></label>
+            </div>
+            <label>Contact name<input id="customerName" /></label>
+            <label>Company name<input id="customerCompany" /></label>
+            <label class="wide">Customer address<textarea id="customerAddress"></textarea></label>
+            <label>Salesperson name<select id="preparedBy"><option value="">Select prepared by</option></select></label>
+            <label>Jotform entity<select id="jotformEntity"></select></label>
+          </div>
+        </section>
+
+        <section class="editor-section">
+          <div class="section-title-row"><h2>Quote Items</h2></div>
+          <label class="currency-control">Currency<select id="currency"></select></label>
+          <div class="pricing-editor">
+            <div class="pricing-head"><span>Product</span><span>Qty</span><span>Unit</span><span>Total</span><span></span></div>
+            <div id="pricingRows"></div>
+            <div class="pricing-footer">
+              <button id="addRow" class="secondary" type="button">Add row</button>
+              <div class="mini-summary"><span>Recurring <strong id="editorRecurring">—</strong></span><span>One-time <strong id="editorOneTime">—</strong></span></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="editor-section">
+          <h2>Discount</h2>
+          <div class="form-grid">
+            <label>Education / Non-profit discount
+              <select id="eligibilityDiscount">
+                <option value="0">No education / non-profit discount</option>
+                <option value="30-education">Education Discount - 30%</option>
+                <option value="30-nonprofit">Non-profit Discount - 30%</option>
+              </select>
+            </label>
+            <label class="reseller-only">Reseller discount
+              <select id="resellerDiscount">
+                <option value="0">No reseller discount</option>
+                <option value="30">Reseller Discount - 30%</option>
+                <option value="20">Reseller Discount - 20%</option>
+                <option value="10">Reseller Discount - 10%</option>
+              </select>
+              <small class="reseller-discount-help">Applied to every item by default. Clear the checkbox on any quote item to exclude it.</small>
+            </label>
+            <div class="multi-year-discount-control">
+              <label class="multi-year-discount-toggle">
+                <input id="multiYearDiscount" type="checkbox" />
+                <span>Multi Year</span>
+              </label>
+              <label id="multiYearDiscountRateField" hidden>Discount %
+                <input id="multiYearDiscountPercent" inputmode="decimal" placeholder="e.g. 10" />
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <section class="editor-section">
+          <h2>Quote Terms</h2>
+          <details class="term-dropdown">
+            <summary id="termSummary">12 months</summary>
+            <div class="term-grid" id="termGrid">
+              <label class="term-toggle"><input type="checkbox" value="1" checked /><span><strong>12 months</strong><small>No term discount</small></span></label>
+              <label class="term-toggle"><input type="checkbox" value="2" /><span><strong>2 years</strong><small>5% discount</small></span></label>
+              <label class="term-toggle"><input type="checkbox" value="2_no_discount" /><span><strong>2 years — no discount</strong><small>No term discount</small></span></label>
+              <label class="term-toggle"><input type="checkbox" value="3" /><span><strong>3 years</strong><small>10% discount</small></span></label>
+              <label class="term-toggle"><input type="checkbox" value="5" /><span><strong>5 years</strong><small>15% discount</small></span></label>
+              <label class="term-toggle custom-term-toggle"><input type="checkbox" value="custom" /><span><strong>Custom term</strong><small>Set label, months, and optional discount</small></span></label>
+              <div id="customTermFields" class="custom-term-fields" hidden>
+                <label>Term label<input id="customTermLabel" placeholder="e.g. 18 months" /></label>
+                <label>Number of months<input id="customTermMonths" inputmode="decimal" placeholder="e.g. 18" /></label>
+                <label>Discount %<input id="customTermDiscount" inputmode="decimal" placeholder="Optional" /></label>
+              </div>
+            </div>
+          </details>
+        </section>
+
+        <section class="editor-section">
+          <div class="section-title-row"><h2>Notes</h2><button id="addNote" class="secondary" type="button">Add note</button></div>
+          <div class="redlines-disclaimer-control">
+            <label class="redlines-disclaimer-toggle"><input id="redlinesDisclaimer" type="checkbox" /><span>Redline Disclaimer</span></label>
+            <textarea id="redlinesDisclaimerText" class="redlines-disclaimer-field" aria-label="Redline Disclaimer note" hidden></textarea>
+          </div>
+          <div id="notesEditor"></div>
+        </section>
+      </aside>
+
+      <section class="preview-pane">
+        <nav class="preview-actions no-print" aria-label="Quote actions">
+          <button id="downloadPdf" class="primary" type="button">Download PDF</button>
+          <button id="giveFeedback" class="secondary" type="button">Give feedback</button>
+          <button id="refreshQuote" class="secondary" type="button">Refresh</button>
+        </nav>
+        <p id="validationMessage" class="validation-message no-print" role="alert"></p>
+        <div class="paper-scroll"><article id="quotePaper" class="quote-paper"></article></div>
+      </section>
+    </main>
+
+    <div id="feedbackModal" class="modal no-print" hidden>
+      <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle">
+        <header><h2 id="feedbackTitle">Give feedback</h2><button id="closeFeedback" type="button" aria-label="Close feedback">×</button></header>
+        <iframe title="Give feedback" data-src="https://form.jotform.com/262111315426041"></iframe>
+      </section>
+    </div>
+
+    <script src="vendor/html2pdf.bundle.min.js"></script>
+  <script src="quote-generator.js?v=20260904-bundle-price-display"></script>
+  </body>
+</html>

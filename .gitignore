@@ -37,3 +37,6 @@ next-env.d.ts
 /.wrangler/
 /.vinext/
 /tmp/
+
+# Separate local project; do not include it in the quote generator repository.
+/expansion-addendum-generator/
