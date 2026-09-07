@@ -348,6 +348,7 @@ const eligibilityDiscountProductNames = new Set([
   "Additional User",
   additionalFiveUserBundleName,
   discountedFiveUserBundleName,
+  "Salesforce AppExchange Package",
   "Salesforce AppExchange Per User Additional Fee",
 ]);
 
