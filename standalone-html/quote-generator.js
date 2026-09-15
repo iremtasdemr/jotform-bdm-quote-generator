@@ -47,9 +47,9 @@ const salespeople = [
 
 const entities = [
   { name: "Jotform US", address: "4 Embarcadero Center, Suite 780\nSan Francisco, CA 94111", taxLabel: "Tax ID", taxId: "46-5729519" },
-  { name: "Jotform Canada Inc.", address: "411-150 22ND Street W, North Vancouver BC V7M 3M4", taxLabel: "TCV", taxId: "23-014404-TCV" },
+  { name: "Jotform Canada Inc.", address: "Suite 1210, 666 Burrard Street\nVancouver, BC V6C 2X8 CANADA", taxLabel: "GST Number", taxId: "708458500 RT 0001\nPST Number: PST-1471-7353\nQST Number: 1230298374" },
   { name: "Jotform PTY LTD", address: "Level 36, Gateway\n1 Macquarie Place\nSydney, NSW 2000", taxLabel: "ABN", taxId: "47 651 796 922" },
-  { name: "Jotform LTD", address: "3 Albert Mews, Albert Road, London, N4 3RD, United Kingdom", taxLabel: "VAT", taxId: "375 7259 57" }
+  { name: "Jotform LTD", address: "25 Cabot Square,\nLondon, E14 4QZ", taxLabel: "VAT Number", taxId: "375 7259 57" }
 ];
 
 const terms = {
@@ -347,7 +347,7 @@ function renderQuote() {
         <tr class="quote-info-top-row"><td></td><td></td><td class="quote-date"><p>${editable(state.text.dateLabel, 'data-text-key="dateLabel"')}</p><p><strong>${escapeHtml(state.proposalDate)}</strong></p></td><td class="quote-meta"><p class="quote-title-line">${editable(state.text.quoteTitle, 'data-text-key="quoteTitle"')}</p><p>${editable(state.quoteNumber || quoteNumber(state.preparedBy), 'data-state-field="quoteNumber"', "quote-plain-editable-text")}</p><p>${editable(state.preparedBy, 'data-state-field="preparedBy"', "quote-plain-editable-text")}</p><p>${editable(salesperson?.email || state.salespersonEmail, 'data-state-field="salespersonEmail"', "quote-plain-editable-text")}</p></td></tr>
         <tr class="quote-info-blank-row"><td></td><td></td><td></td><td></td></tr>
         <tr class="quote-info-seller-row"><td class="quote-company-block" colspan="4"><p><strong>${editable(state.text.sellerName, 'data-text-key="sellerName"')}</strong></p><p>${editable(state.text.sellerAddress, 'data-text-key="sellerAddress"', "quote-address")}</p></td></tr>
-        <tr class="quote-info-tax-row"><td class="quote-tax-id">${editable(state.text.taxIdLabel, 'data-text-key="taxIdLabel"')}: ${editable(state.text.taxId, 'data-text-key="taxId"')}</td><td></td><td></td><td></td></tr>
+        <tr class="quote-info-tax-row"><td class="quote-tax-id" colspan="4">${editable(state.text.taxIdLabel, 'data-text-key="taxIdLabel"')}: ${editable(state.text.taxId, 'data-text-key="taxId"', "quote-tax-id-value")}</td></tr>
       </tbody>
     </table>
     ${partiesTable()}

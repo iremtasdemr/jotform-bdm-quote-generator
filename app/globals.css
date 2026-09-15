@@ -1062,6 +1062,10 @@ button {
   font-size: 0.833rem;
 }
 
+.quote-tax-id-value {
+  white-space: pre-line;
+}
+
 .quote-party-table {
   width: 6.594in;
   margin-top: 0.18in;

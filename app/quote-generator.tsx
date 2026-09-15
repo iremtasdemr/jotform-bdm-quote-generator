@@ -291,9 +291,11 @@ const jotformEntityOptions: JotformEntityOption[] = [
   },
   {
     name: "Jotform Canada Inc.",
-    address: "411-150 22ND Street W, North Vancouver BC V7M 3M4",
-    taxIdLabel: "TCV",
-    taxId: "23-014404-TCV",
+    address:
+      "Suite 1210, 666 Burrard Street\nVancouver, BC V6C 2X8 CANADA",
+    taxIdLabel: "GST Number",
+    taxId:
+      "708458500 RT 0001\nPST Number: PST-1471-7353\nQST Number: 1230298374",
   },
   {
     name: "Jotform PTY LTD",
@@ -303,8 +305,8 @@ const jotformEntityOptions: JotformEntityOption[] = [
   },
   {
     name: "Jotform LTD",
-    address: "3 Albert Mews, Albert Road, London, N4 3RD, United Kingdom",
-    taxIdLabel: "VAT",
+    address: "25 Cabot Square,\nLondon, E14 4QZ",
+    taxIdLabel: "VAT Number",
     taxId: "375 7259 57",
   },
 ];
@@ -2472,7 +2474,7 @@ function QuotePage({
             </td>
           </tr>
           <tr className="quote-info-tax-row">
-            <td className="quote-tax-id">
+            <td className="quote-tax-id" colSpan={4}>
               <EditableText
                 value={documentText.taxIdLabel}
                 placeholder="Tax ID"
@@ -2480,14 +2482,13 @@ function QuotePage({
               />
               :{" "}
               <EditableText
+                className="quote-tax-id-value"
                 value={documentText.taxId}
                 placeholder="Tax ID number"
+                multiline
                 onChange={(value) => onDocumentTextChange("taxId", value)}
               />
             </td>
-            <td />
-            <td />
-            <td />
           </tr>
         </tbody>
       </table>
